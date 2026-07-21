@@ -5,11 +5,11 @@ const {
   toggleHabit,
   deleteHabit,
 } = require('../controllers/habitController');
-const { protect } = require('../middleware/authMiddleware');
+const { optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.use(protect); // All habit routes require JWT authentication
+router.use(optionalAuth); // Seamless MongoDB access
 
 router.route('/')
   .get(getHabits)

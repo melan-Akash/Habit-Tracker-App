@@ -12,7 +12,7 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// 1. Request Notification Permissions
+// 1. Request Notification Permissions & Channel Setup for Android Physical Phones
 export const requestNotificationPermissions = async (): Promise<boolean> => {
   if (Platform.OS === 'web') return true;
 
@@ -32,10 +32,12 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'Habit Reminders',
+        name: 'Habit Reminders & Check-ins',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#7C4DFF',
+        sound: 'default',
+        enableVibrate: true,
       });
     }
 
@@ -57,6 +59,8 @@ export const sendCheckInNotification = async (habitTitle: string, currentStreak:
         body: `Awesome job! You kept your ${currentStreak}-day streak burning for "${habitTitle}"! 🔥`,
         data: { type: 'checkin', habitTitle },
         sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
       },
       trigger: null, // Send immediately
     });
@@ -79,6 +83,8 @@ export const scheduleDailyReminders = async (morningEnabled: boolean = true, eve
           title: 'Good Morning! 🌅',
           body: 'Time to start your morning habits and build your streak momentum!',
           sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -95,6 +101,8 @@ export const scheduleDailyReminders = async (morningEnabled: boolean = true, eve
           title: 'Evening Habit Review 🌆',
           body: 'Check in your remaining habits before bedtime to keep your streaks alive!',
           sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -118,6 +126,8 @@ export const scheduleHabitReminder = async (title: string, hour: number, minute:
         title: `Reminder: ${title} ⏰`,
         body: `It's time for your habit "${title}". Let's get it done! 💪`,
         sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        ...(Platform.OS === 'android' ? { channelId: 'default' } : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
