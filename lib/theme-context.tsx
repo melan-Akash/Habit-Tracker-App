@@ -16,9 +16,9 @@ export interface AppTheme {
     silver: string;
     bronze: string;
     surfaceVariant: string;
-    gradientPrimary: string[];
-    gradientCard: string[];
-    gradientAccent: string[];
+    gradientPrimary: readonly [string, string, ...string[]];
+    gradientCard: readonly [string, string, ...string[]];
+    gradientAccent: readonly [string, string, ...string[]];
     success: string;
     error: string;
     inputBg: string;
@@ -42,9 +42,9 @@ const darkColors = {
   silver: '#E2E8F0',
   bronze: '#CD7F32',
   surfaceVariant: '#1F2442',
-  gradientPrimary: ['#6C5CE7', '#7C4DFF'],
-  gradientCard: ['#16192E', '#1F2442'],
-  gradientAccent: ['#00B894', '#00E676'],
+  gradientPrimary: ['#6C5CE7', '#7C4DFF'] as const,
+  gradientCard: ['#16192E', '#1F2442'] as const,
+  gradientAccent: ['#00B894', '#00E676'] as const,
   success: '#00E676',
   error: '#FF5252',
   inputBg: '#1C203B',
@@ -66,9 +66,9 @@ const lightColors = {
   silver: '#94A3B8',
   bronze: '#D97706',
   surfaceVariant: '#F1F5F9',
-  gradientPrimary: ['#6C5CE7', '#8C7CFF'],
-  gradientCard: ['#FFFFFF', '#F8FAFC'],
-  gradientAccent: ['#10B981', '#34D399'],
+  gradientPrimary: ['#6C5CE7', '#8C7CFF'] as const,
+  gradientCard: ['#FFFFFF', '#F8FAFC'] as const,
+  gradientAccent: ['#10B981', '#34D399'] as const,
   success: '#10B981',
   error: '#EF4444',
   inputBg: '#F1F5F9',
