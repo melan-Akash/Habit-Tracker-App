@@ -121,34 +121,40 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Quick Navigation Menu Bar for Calendar, Streaks, and Settings */}
+      {/* Prominent Quick Access Menu Bar (Calendar, Streaks, Settings) */}
       <View style={styles.dashboardMenuRow}>
-        <TouchableOpacity
-          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => router.push('/calendar')}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="calendar-month" size={18} color={colors.primary} />
-          <Text style={[styles.menuChipText, { color: colors.text }]}>Calendar</Text>
-        </TouchableOpacity>
+        <Surface style={[styles.menuChipCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+          <TouchableOpacity
+            style={styles.menuChipTouchable}
+            onPress={() => router.push('/calendar')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="calendar-month" size={20} color={colors.primary} />
+            <Text style={[styles.menuChipText, { color: colors.text }]}>Calendar 📅</Text>
+          </TouchableOpacity>
+        </Surface>
 
-        <TouchableOpacity
-          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => router.push('/streaks')}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="fire" size={18} color={colors.gold} />
-          <Text style={[styles.menuChipText, { color: colors.text }]}>Streaks</Text>
-        </TouchableOpacity>
+        <Surface style={[styles.menuChipCard, { backgroundColor: colors.card, borderColor: colors.gold }]}>
+          <TouchableOpacity
+            style={styles.menuChipTouchable}
+            onPress={() => router.push('/streaks')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="fire" size={20} color={colors.gold} />
+            <Text style={[styles.menuChipText, { color: colors.text }]}>Streaks 🏆</Text>
+          </TouchableOpacity>
+        </Surface>
 
-        <TouchableOpacity
-          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-          onPress={() => router.push('/settings')}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="cog-outline" size={18} color={colors.textSecondary} />
-          <Text style={[styles.menuChipText, { color: colors.text }]}>Settings</Text>
-        </TouchableOpacity>
+        <Surface style={[styles.menuChipCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <TouchableOpacity
+            style={styles.menuChipTouchable}
+            onPress={() => router.push('/settings')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="cog-outline" size={20} color={colors.secondary} />
+            <Text style={[styles.menuChipText, { color: colors.text }]}>Settings ⚙️</Text>
+          </TouchableOpacity>
+        </Surface>
       </View>
 
       {/* Horizontal Weekly Calendar Strip */}
@@ -666,20 +672,27 @@ const styles = StyleSheet.create({
   },
   dashboardMenuRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     marginBottom: 16,
-    marginTop: 4,
+    marginTop: 6,
   },
-  menuChip: {
+  menuChipCard: {
     flex: 1,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+  },
+  menuChipTouchable: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    borderWidth: 1,
+    paddingHorizontal: 6,
   },
   menuChipText: {
     fontSize: 12,
