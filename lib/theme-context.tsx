@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { MD3LightTheme, MD3DarkTheme, PaperProvider, configureFonts } from 'react-native-paper';
+
+export type ThemeMode = 'auto' | 'dark' | 'light';
 
 export interface AppTheme {
   isDark: boolean;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleTheme: () => void;
+  greetingMessage: string;
   colors: {
     background: string;
     card: string;
@@ -26,7 +32,6 @@ export interface AppTheme {
     tabBarActive: string;
     tabBarInactive: string;
   };
-  toggleTheme: () => void;
 }
 
 const darkColors = {
@@ -81,17 +86,56 @@ const fontConfig = {
   fontFamily: 'Outfit_400Regular',
 };
 
+export const getGreeting = (name: string = 'Akash') => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return `Good Morning, ${name} 🌅`;
+  } else if (hour >= 12 && hour < 17) {
+    return `Good Afternoon, ${name} ☀️`;
+  } else if (hour >= 17 && hour < 21) {
+    return `Good Evening, ${name} 🌆`;
+  } else {
+    return `Good Night, ${name} 🌙`;
+  }
+};
+
 const ThemeContext = createContext<AppTheme>({
   isDark: true,
-  colors: darkColors,
+  themeMode: 'auto',
+  setThemeMode: () => {},
   toggleTheme: () => {},
+  greetingMessage: 'Good Day 🚀',
+  colors: darkColors,
 });
 
 export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [isDark, setIsDark] = useState<boolean>(true);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('auto');
+  const [greetingMessage, setGreetingMessage] = useState<string>(getGreeting());
+
+  // Check current time for auto mode
+  const currentHour = new Date().getHours();
+  const isNightTime = currentHour >= 18 || currentHour < 6;
+
+  const isDark =
+    themeMode === 'auto'
+      ? isNightTime
+      : themeMode === 'dark';
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGreetingMessage(getGreeting());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleTheme = () => {
-    setIsDark((prev) => !prev);
+    if (themeMode === 'dark') {
+      setThemeMode('light');
+    } else if (themeMode === 'light') {
+      setThemeMode('auto');
+    } else {
+      setThemeMode('dark');
+    }
   };
 
   const activeColors = isDark ? darkColors : lightColors;
@@ -119,7 +163,16 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
       };
 
   return (
-    <ThemeContext.Provider value={{ isDark, colors: activeColors, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        isDark,
+        themeMode,
+        setThemeMode,
+        toggleTheme,
+        greetingMessage,
+        colors: activeColors,
+      }}
+    >
       <PaperProvider theme={paperTheme}>{children}</PaperProvider>
     </ThemeContext.Provider>
   );

@@ -25,18 +25,23 @@ export default function ProfileScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="headlineSmall" style={[styles.title, { color: colors.text }]}>
-          My Profile 👤
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text variant="headlineSmall" style={[styles.title, { color: colors.text }]}>
+            My Profile 👤
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.settingsBtn, { backgroundColor: colors.surfaceVariant }]}
+          onPress={() => router.push('/settings')}
+        >
+          <MaterialCommunityIcons name="cog-outline" size={22} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
       {/* User Card */}
       <Surface style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={{ uri: user.avatarUrl }}
-            style={styles.avatar}
-          />
+          <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
           <View style={[styles.levelBadge, { backgroundColor: colors.primary }]}>
             <Text style={styles.levelBadgeText}>Lvl {user.currentLevel}</Text>
           </View>
@@ -99,7 +104,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* App Settings Section */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences & Settings</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Preferences</Text>
 
       <Surface style={[styles.settingsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
         {/* Dark / Light Mode Toggle */}
@@ -131,38 +136,19 @@ export default function ProfileScreen() {
 
         <Divider style={{ backgroundColor: colors.cardBorder, marginVertical: 12 }} />
 
-        {/* Notifications Toggle */}
-        <View style={styles.settingRow}>
+        {/* Detailed Settings Route */}
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => router.push('/settings')}
+          activeOpacity={0.7}
+        >
           <View style={styles.settingLeft}>
             <View style={[styles.iconBg, { backgroundColor: colors.surfaceVariant }]}>
-              <MaterialCommunityIcons name="bell-outline" size={22} color={colors.accent} />
+              <MaterialCommunityIcons name="cog-outline" size={22} color={colors.gold} />
             </View>
             <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Daily Reminders</Text>
-              <Text style={[styles.settingSub, { color: colors.textSecondary }]}>
-                Get notified for habit check-ins
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={notifications}
-            onValueChange={setNotifications}
-            trackColor={{ false: '#CBD5E1', true: colors.accent }}
-            thumbColor="#FFF"
-          />
-        </View>
-
-        <Divider style={{ backgroundColor: colors.cardBorder, marginVertical: 12 }} />
-
-        {/* Account Safety */}
-        <TouchableOpacity style={styles.settingRow} activeOpacity={0.7}>
-          <View style={styles.settingLeft}>
-            <View style={[styles.iconBg, { backgroundColor: colors.surfaceVariant }]}>
-              <MaterialCommunityIcons name="shield-check-outline" size={22} color={colors.gold} />
-            </View>
-            <View>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>Account & Security</Text>
-              <Text style={[styles.settingSub, { color: colors.textSecondary }]}>Manage Appwrite session</Text>
+              <Text style={[styles.settingTitle, { color: colors.text }]}>All App Settings</Text>
+              <Text style={[styles.settingSub, { color: colors.textSecondary }]}>Auto Night mode, reminders & data</Text>
             </View>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={24} color={colors.textSecondary} />
@@ -192,10 +178,19 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
   },
   title: {
     fontWeight: 'bold',
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   userCard: {
     borderRadius: 20,

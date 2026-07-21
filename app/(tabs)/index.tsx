@@ -30,7 +30,6 @@ const quotes = [
   "Motivation gets you started. Habit keeps you going. ✨",
 ];
 
-// Current week days generator
 const currentWeek = [
   { dayName: 'Mon', dayNum: 20 },
   { dayName: 'Tue', dayNum: 21 }, // Today
@@ -42,26 +41,25 @@ const currentWeek = [
 ];
 
 export default function HomeScreen() {
-  const { isDark, colors, toggleTheme } = useAppTheme();
+  const { isDark, colors, toggleTheme, greetingMessage } = useAppTheme();
   const { habits, toggleHabit, deleteHabit, user } = useHabits();
   const router = useRouter();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedDay, setSelectedDay] = useState<number>(21); // Today July 21
+  const [selectedDay, setSelectedDay] = useState<number>(21);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quoteIndex, setQuoteIndex] = useState<number>(0);
 
-  // Date formatted
   const todayDateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
   });
 
-  // Filtered habits by category AND search query
   const filteredHabits = habits.filter((h) => {
     const matchesCategory = selectedCategory === 'all' || h.category === selectedCategory;
-    const matchesSearch = h.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch =
+      h.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       h.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -93,16 +91,16 @@ export default function HomeScreen() {
     >
       {/* Header Bar */}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={[styles.dateText, { color: colors.primary }]}>{todayDateStr.toUpperCase()}</Text>
-          <Text variant="headlineMedium" style={[styles.welcomeText, { color: colors.text }]}>
-            Hello, {user.name.split(' ')[0]} 👋
+          <Text variant="headlineSmall" style={[styles.welcomeText, { color: colors.text }]}>
+            {greetingMessage}
           </Text>
         </View>
 
         <View style={styles.headerActions}>
           <TouchableOpacity
-            style={[styles.themeBtn, { backgroundColor: colors.surfaceVariant }]}
+            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceVariant }]}
             onPress={toggleTheme}
             activeOpacity={0.7}
           >
@@ -111,6 +109,14 @@ export default function HomeScreen() {
               size={22}
               color={colors.primary}
             />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.surfaceVariant }]}
+            onPress={() => router.push('/settings')}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="cog-outline" size={22} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -129,9 +135,7 @@ export default function HomeScreen() {
               style={[
                 styles.weekDayPill,
                 {
-                  backgroundColor: isSelected
-                    ? colors.primary
-                    : colors.card,
+                  backgroundColor: isSelected ? colors.primary : colors.card,
                   borderColor: isSelected ? colors.primary : colors.cardBorder,
                   borderWidth: 1,
                 },
@@ -399,16 +403,17 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontWeight: 'bold',
     marginTop: 2,
+    fontSize: 20,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
-  themeBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
