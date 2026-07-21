@@ -4,6 +4,7 @@ import {
   requestNotificationPermissions,
   sendCheckInNotification,
   scheduleDailyReminders,
+  scheduleHabitReminder,
 } from './notification-service';
 import { habitAPI } from './api';
 
@@ -169,6 +170,18 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     };
 
     setHabits((prev) => [newHabit, ...prev]);
+
+    // Schedule notification for custom reminder time
+    if (newHabitData.reminderTime) {
+      const parts = newHabitData.reminderTime.split(':');
+      if (parts.length === 2) {
+        const hour = parseInt(parts[0], 10);
+        const minute = parseInt(parts[1], 10);
+        if (!isNaN(hour) && !isNaN(minute)) {
+          scheduleHabitReminder(newHabitData.title, hour, minute);
+        }
+      }
+    }
 
     // Call live API
     try {

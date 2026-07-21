@@ -18,6 +18,7 @@ export interface Habit {
   completedDates: string[];
   createdAt: string;
   timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'anytime';
+  reminderTime?: string; // e.g. "08:00", "20:30"
 }
 
 export interface AchievementBadge {

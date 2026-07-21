@@ -362,6 +362,15 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                   )}
+
+                  {habit.reminderTime && (
+                    <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
+                      <MaterialCommunityIcons name="bell-ring-outline" size={13} color={colors.primary} />
+                      <Text style={[styles.badgeText, { color: colors.primary, fontWeight: 'bold' }]}>
+                        {habit.reminderTime}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 

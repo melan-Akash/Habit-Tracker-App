@@ -64,6 +64,10 @@ const habitSchema = new mongoose.Schema(
       enum: ['morning', 'afternoon', 'evening', 'anytime'],
       default: 'anytime',
     },
+    reminderTime: {
+      type: String,
+      default: '08:00',
+    },
   },
   {
     timestamps: true,

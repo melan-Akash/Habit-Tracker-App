@@ -26,6 +26,14 @@ const categoriesList: { label: string; value: HabitCategory; icon: string; color
 
 const colorsList = ['#8C7CFF', '#00E676', '#FFB74D', '#FF5252', '#FF6584', '#00B894', '#0984E3'];
 
+const presetTimes = [
+  { label: '07:00 AM', value: '07:00' },
+  { label: '08:00 AM', value: '08:00' },
+  { label: '12:30 PM', value: '12:30' },
+  { label: '06:00 PM', value: '18:00' },
+  { label: '08:30 PM', value: '20:30' },
+];
+
 export default function AddHabitScreen() {
   const { colors } = useAppTheme();
   const { addHabit } = useHabits();
@@ -42,6 +50,7 @@ export default function AddHabitScreen() {
   const [unit, setUnit] = useState('mins');
   const [selectedColor, setSelectedColor] = useState('#FF5252');
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'anytime'>('anytime');
+  const [reminderTime, setReminderTime] = useState<string>('08:00');
 
   // AI Magic Text Parser - Auto-Fills ALL Fields Completely
   const handleAiParse = async () => {
@@ -63,6 +72,7 @@ export default function AddHabitScreen() {
         if (h.unit) setUnit(h.unit);
         if (h.color) setSelectedColor(h.color);
         if (h.timeOfDay) setTimeOfDay(h.timeOfDay);
+        if (h.reminderTime) setReminderTime(h.reminderTime);
       }
     } catch (e: any) {
       console.log('AI Parse error fallback:', e.message);
@@ -91,6 +101,7 @@ export default function AddHabitScreen() {
       bestStreak: 0,
       completedToday: false,
       timeOfDay,
+      reminderTime,
     });
 
     setTitle('');
@@ -125,7 +136,7 @@ export default function AddHabitScreen() {
             <Text style={[styles.aiMagicTitle, { color: colors.text }]}>AI Magic Complete Auto-Fill</Text>
           </View>
           <Text style={[styles.aiMagicSub, { color: colors.textSecondary }]}>
-            Type any sentence below, and AI will automatically populate ALL fields!
+            Type any sentence below, and AI will automatically populate ALL fields & notification time!
           </Text>
 
           <TextInput
@@ -245,8 +256,35 @@ export default function AddHabitScreen() {
             />
           </View>
 
+          {/* Scheduled Reminder Notification Time */}
+          <Text style={[styles.inputLabel, { color: colors.text }]}>Scheduled Notification Time 🔔</Text>
+          <View style={styles.timeOfDayRow}>
+            {presetTimes.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                onPress={() => setReminderTime(item.value)}
+                style={[
+                  styles.timeChip,
+                  {
+                    backgroundColor: reminderTime === item.value ? colors.primary : colors.inputBg,
+                    borderColor: reminderTime === item.value ? colors.primary : colors.cardBorder,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.timeChipText,
+                    { color: reminderTime === item.value ? '#FFF' : colors.text },
+                  ]}
+                >
+                  ⏰ {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           {/* Time of Day */}
-          <Text style={[styles.inputLabel, { color: colors.text }]}>Preferred Time of Day</Text>
+          <Text style={[styles.inputLabel, { color: colors.text }]}>Preferred Period</Text>
           <View style={styles.timeOfDayRow}>
             {[
               { value: 'morning', label: 'Morning 🌅' },
@@ -310,7 +348,7 @@ export default function AddHabitScreen() {
           contentStyle={{ height: 50 }}
           labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
         >
-          Save & Start Habit 🚀
+          Save & Schedule Habit 🚀
         </Button>
       </ScrollView>
     </KeyboardAvoidingView>
