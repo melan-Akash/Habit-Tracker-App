@@ -6,13 +6,12 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { Text, Surface, IconButton, Chip } from 'react-native-paper';
+import { Text, Surface, IconButton, TextInput } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../lib/theme-context';
 import { useHabits } from '../../lib/habit-store';
-import { HabitCategory } from '../../types/database.type';
 
 const categories: { label: string; value: string; icon: string }[] = [
   { label: 'All', value: 'all', icon: 'apps' },
@@ -31,12 +30,25 @@ const quotes = [
   "Motivation gets you started. Habit keeps you going. ✨",
 ];
 
+// Current week days generator
+const currentWeek = [
+  { dayName: 'Mon', dayNum: 20 },
+  { dayName: 'Tue', dayNum: 21 }, // Today
+  { dayName: 'Wed', dayNum: 22 },
+  { dayName: 'Thu', dayNum: 23 },
+  { dayName: 'Fri', dayNum: 24 },
+  { dayName: 'Sat', dayNum: 25 },
+  { dayName: 'Sun', dayNum: 26 },
+];
+
 export default function HomeScreen() {
   const { isDark, colors, toggleTheme } = useAppTheme();
   const { habits, toggleHabit, deleteHabit, user } = useHabits();
   const router = useRouter();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedDay, setSelectedDay] = useState<number>(21); // Today July 21
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [quoteIndex, setQuoteIndex] = useState<number>(0);
 
   // Date formatted
@@ -46,10 +58,13 @@ export default function HomeScreen() {
     day: 'numeric',
   });
 
-  // Filtered habits
-  const filteredHabits = selectedCategory === 'all'
-    ? habits
-    : habits.filter((h) => h.category === selectedCategory);
+  // Filtered habits by category AND search query
+  const filteredHabits = habits.filter((h) => {
+    const matchesCategory = selectedCategory === 'all' || h.category === selectedCategory;
+    const matchesSearch = h.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      h.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   const completedCount = habits.filter((h) => h.completedToday).length;
   const totalCount = habits.length;
@@ -100,6 +115,57 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* Horizontal Weekly Calendar Strip */}
+      <View style={styles.weekStripContainer}>
+        {currentWeek.map((item) => {
+          const isSelected = selectedDay === item.dayNum;
+          const isToday = item.dayNum === 21;
+
+          return (
+            <TouchableOpacity
+              key={item.dayNum}
+              onPress={() => setSelectedDay(item.dayNum)}
+              activeOpacity={0.7}
+              style={[
+                styles.weekDayPill,
+                {
+                  backgroundColor: isSelected
+                    ? colors.primary
+                    : colors.card,
+                  borderColor: isSelected ? colors.primary : colors.cardBorder,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.weekDayName,
+                  { color: isSelected ? '#FFF' : colors.textSecondary },
+                ]}
+              >
+                {item.dayName}
+              </Text>
+              <Text
+                style={[
+                  styles.weekDayNum,
+                  { color: isSelected ? '#FFF' : colors.text },
+                ]}
+              >
+                {item.dayNum}
+              </Text>
+              {isToday && (
+                <View
+                  style={[
+                    styles.todayIndicator,
+                    { backgroundColor: isSelected ? '#FFF' : colors.accent },
+                  ]}
+                />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {/* Progress Banner */}
       <LinearGradient
         colors={colors.gradientPrimary}
@@ -129,6 +195,24 @@ export default function HomeScreen() {
           />
         </View>
       </LinearGradient>
+
+      {/* Search Input Bar */}
+      <TextInput
+        mode="outlined"
+        placeholder="Search your habits..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        style={[styles.searchInput, { backgroundColor: colors.card }]}
+        outlineColor={colors.cardBorder}
+        activeOutlineColor={colors.primary}
+        textColor={colors.text}
+        left={<TextInput.Icon icon="magnify" color={colors.textSecondary} />}
+        right={
+          searchQuery ? (
+            <TextInput.Icon icon="close-circle" color={colors.textSecondary} onPress={() => setSearchQuery('')} />
+          ) : null
+        }
+      />
 
       {/* Motivational Quote Banner */}
       <Surface style={[styles.quoteCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -181,7 +265,7 @@ export default function HomeScreen() {
       {/* Today's Habits Header */}
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Today's Habits ({filteredHabits.length})
+          Habits ({filteredHabits.length})
         </Text>
         <TouchableOpacity onPress={() => router.push('/add-habit')}>
           <Text style={[styles.addNewText, { color: colors.primary }]}>+ Add New</Text>
@@ -192,7 +276,7 @@ export default function HomeScreen() {
       {filteredHabits.length === 0 ? (
         <Surface style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <MaterialCommunityIcons name="emoticon-outline" size={48} color={colors.textSecondary} />
-          <Text style={[styles.emptyText, { color: colors.text }]}>No habits in this category yet!</Text>
+          <Text style={[styles.emptyText, { color: colors.text }]}>No habits found!</Text>
           <TouchableOpacity
             style={[styles.emptyAddBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push('/add-habit')}
@@ -305,7 +389,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   dateText: {
     fontSize: 12,
@@ -327,6 +411,35 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  weekStripContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  weekDayPill: {
+    width: '13%',
+    height: 64,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  weekDayName: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  weekDayNum: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  todayIndicator: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    position: 'absolute',
+    bottom: 6,
   },
   progressBanner: {
     borderRadius: 22,
@@ -379,6 +492,9 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#FFF',
     borderRadius: 4,
+  },
+  searchInput: {
+    marginBottom: 16,
   },
   quoteCard: {
     borderRadius: 16,

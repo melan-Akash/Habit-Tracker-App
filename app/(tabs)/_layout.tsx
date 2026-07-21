@@ -22,7 +22,7 @@ export default function TabLayout() {
           elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
@@ -35,14 +35,29 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'calendar-check' : 'calendar-check-outline'}
-              size={24}
+              size={23}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 2. Add Habit */}
+      {/* 2. Monthly Calendar */}
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: "Calendar",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? 'calendar-month' : 'calendar-month-outline'}
+              size={23}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 3. Add Habit */}
       <Tabs.Screen
         name="add-habit"
         options={{
@@ -50,14 +65,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'plus-circle' : 'plus-circle-outline'}
-              size={26}
+              size={25}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 3. Streaks & Badges */}
+      {/* 4. Streaks & Badges */}
       <Tabs.Screen
         name="streaks"
         options={{
@@ -65,14 +80,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'fire' : 'fire-alert'}
-              size={24}
+              size={23}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 4. Profile & Settings */}
+      {/* 5. Profile & Settings */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -80,7 +95,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'account-circle' : 'account-circle-outline'}
-              size={25}
+              size={23}
               color={color}
             />
           ),
