@@ -22,7 +22,7 @@ export default function TabLayout() {
           elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
         },
       }}
@@ -35,14 +35,29 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'calendar-check' : 'calendar-check-outline'}
-              size={23}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 2. Monthly Calendar */}
+      {/* 2. AI Coach Assistant */}
+      <Tabs.Screen
+        name="ai-coach"
+        options={{
+          title: "AI Coach",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? 'robot' : 'robot-outline'}
+              size={22}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 3. Monthly Calendar */}
       <Tabs.Screen
         name="calendar"
         options={{
@@ -50,14 +65,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'calendar-month' : 'calendar-month-outline'}
-              size={23}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 3. Add Habit */}
+      {/* 4. Add Habit */}
       <Tabs.Screen
         name="add-habit"
         options={{
@@ -65,14 +80,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'plus-circle' : 'plus-circle-outline'}
-              size={25}
+              size={24}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 4. Streaks & Badges */}
+      {/* 5. Streaks & Badges */}
       <Tabs.Screen
         name="streaks"
         options={{
@@ -80,14 +95,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'fire' : 'fire-alert'}
-              size={23}
+              size={22}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 5. Profile & Settings */}
+      {/* 6. Profile & Settings */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -95,7 +110,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'account-circle' : 'account-circle-outline'}
-              size={23}
+              size={22}
               color={color}
             />
           ),

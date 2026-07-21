@@ -20,16 +20,18 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes = require('./routes/authRoutes');
 const habitRoutes = require('./routes/habitRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Base Health Check Route
 app.get('/', (req, res) => {
   res.status(200).json({
-    message: '🚀 Habit Tracker API is running smoothly!',
+    message: '🚀 Habit Tracker API & OpenRouter AI Engine running smoothly!',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
