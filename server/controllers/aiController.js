@@ -1,13 +1,14 @@
 const Habit = require('../models/Habit');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const DEFAULT_MODEL = 'meta-llama/llama-3.1-70b-instruct';
 
-// Helper function to call OpenRouter API
+// Helper function to call OpenRouter API (Meta Llama 3.1 70B Instruct)
 const callOpenRouter = async (messages) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey || apiKey.includes('your_openrouter_api_key')) {
-    console.log('⚠️ OpenRouter API Key not configured. Using Fallback Smart AI response.');
+    console.log('⚠️ OpenRouter API Key not configured in .env. Using Smart Fallback AI.');
     return null;
   }
 
@@ -21,9 +22,10 @@ const callOpenRouter = async (messages) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
         messages,
         temperature: 0.7,
+        max_tokens: 500,
       }),
     });
 
@@ -31,14 +33,17 @@ const callOpenRouter = async (messages) => {
     if (data.choices && data.choices[0] && data.choices[0].message) {
       return data.choices[0].message.content;
     }
+    if (data.error) {
+      console.error('🔴 OpenRouter API Error:', data.error.message || data.error);
+    }
     return null;
   } catch (error) {
-    console.error('🔴 OpenRouter API Call Error:', error.message);
+    console.error('🔴 OpenRouter Connection Error:', error.message);
     return null;
   }
 };
 
-// @desc    Chat with AI Habit Coach
+// @desc    Chat with AI Habit Coach (Powered by Llama 3.1 70B)
 // @route   POST /api/ai/chat
 // @access  Private
 exports.chatWithCoach = async (req, res) => {
@@ -49,13 +54,12 @@ exports.chatWithCoach = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide a message' });
     }
 
-    // Fetch user's habits for context
     const habits = await Habit.find({ user: req.user.id });
     const habitsSummary = habits.map(h => `${h.title} (${h.category}) - ${h.currentStreak}d streak`).join(', ');
 
-    const systemPrompt = `You are an elite, empathetic, and highly motivating AI Habit Coach. 
-The user currently tracks the following habits: ${habitsSummary || 'No habits added yet'}.
-Provide short, actionable, inspiring advice with emojis to help them stay consistent. Keep responses under 150 words.`;
+    const systemPrompt = `You are an elite, empathetic, and highly motivating AI Habit Coach powered by Llama 3.1 70B. 
+The user currently tracks these habits: ${habitsSummary || 'No habits added yet'}.
+Provide short, actionable, inspiring advice with emojis to help them build lasting discipline. Keep responses under 150 words.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -65,37 +69,42 @@ Provide short, actionable, inspiring advice with emojis to help them stay consis
     const aiResponse = await callOpenRouter(messages);
 
     if (aiResponse) {
-      return res.status(200).json({ success: true, reply: aiResponse });
+      return res.status(200).json({
+        success: true,
+        model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
+        reply: aiResponse,
+      });
     }
 
-    // Smart Fallback Response if OpenRouter API Key is not set or rate-limited
+    // Fallback AI response
     const fallbackReplies = [
-      `That's a great goal! 🚀 To build consistency with "${message}", start small—just 5 minutes a day! Would you like me to generate a 7-day routine for you?`,
-      `Awesome question! 💡 Remember that motivation comes after taking the first small action. Focus on your 5-day streak and celebrate small wins! 🔥`,
-      `Great progress! 🌟 Try attaching this new habit to an existing routine (Habit Stacking). For example: "After morning coffee, I will meditate for 5 minutes." ☕🧘`,
+      `That's a fantastic habit goal! 🚀 Using small daily steps with Meta Llama 3.1 70B AI guidance, you can build consistency. Start with just 5 minutes today! 🔥`,
+      `Awesome effort! 💡 Remember: Motivation gets you started, but habit keeps you going. Stick to your active streak and celebrate every win! 🏆`,
+      `Great progress! 🌟 Try Habit Stacking: attach this new goal immediately after an established routine like your morning coffee or workout! ☕🧘`,
     ];
 
     const reply = fallbackReplies[Math.floor(Math.random() * fallbackReplies.length)];
 
     res.status(200).json({
       success: true,
+      model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
       reply,
-      note: 'Using Smart Fallback AI. Add your OPENROUTER_API_KEY in server/.env for live LLM models!',
+      note: 'Using Smart Fallback AI. Add your OPENROUTER_API_KEY in server/.env to activate live Llama 3.1 70B!',
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// @desc    Generate Personalised AI Routine / Habits
+// @desc    Generate Personalised AI Routine (Powered by Llama 3.1 70B)
 // @route   POST /api/ai/generate-routine
 // @access  Private
 exports.generateRoutine = async (req, res) => {
   try {
-    const { goal } = req.body; // e.g. "I want to get fit and eat healthy"
+    const { goal } = req.body;
 
-    const systemPrompt = `You are an expert Habit Designer. The user wants to achieve this goal: "${goal || 'Improve productivity and wellness'}".
-Generate 4 recommended habits in JSON format.
+    const systemPrompt = `You are an expert Habit Designer. The user wants to achieve this goal: "${goal || 'Improve health and focus'}".
+Generate 3-4 recommended habits in JSON format.
 Output ONLY raw JSON with this exact array structure:
 [
   {
@@ -125,11 +134,10 @@ Output ONLY raw JSON with this exact array structure:
           return res.status(200).json({ success: true, habits: generatedHabits });
         }
       } catch (err) {
-        console.log('JSON Parse failed, returning fallback');
+        console.log('JSON parse error, using fallback');
       }
     }
 
-    // Fallback AI Routine
     const fallbackRoutines = [
       {
         title: 'Morning Power Workout',
@@ -160,16 +168,6 @@ Output ONLY raw JSON with this exact array structure:
         frequency: 'daily',
         color: '#00E676',
         icon: 'water-outline',
-      },
-      {
-        title: 'Deep Focus Reading',
-        description: 'Read 15 pages of self-growth book',
-        category: 'learning',
-        targetCount: 15,
-        unit: 'pages',
-        frequency: 'daily',
-        color: '#FFB74D',
-        icon: 'book-open-variant',
       },
     ];
 
