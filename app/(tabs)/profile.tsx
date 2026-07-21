@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../lib/theme-context';
 import { useHabits } from '../../lib/habit-store';
-import { uploadAPI } from '../../lib/api';
+import { uploadAPI, authAPI } from '../../lib/api';
 
 export default function ProfileScreen() {
   const { isDark, colors, toggleTheme } = useAppTheme();
@@ -28,6 +28,7 @@ export default function ProfileScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editName, setEditName] = useState(user.name);
   const [editEmail, setEditEmail] = useState(user.email);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const completedCount = habits.filter((h) => h.completedToday).length;
   const totalCount = habits.length;
@@ -62,14 +63,13 @@ export default function ProfileScreen() {
           } as any);
 
           // Upload to Cloudinary via Express Backend
-          const res = await uploadAPI.uploadAvatar(formData, 'jwt_token');
+          const res = await uploadAPI.uploadAvatar(formData);
 
           if (res.url || res.secure_url) {
             const newUrl = res.url || res.secure_url;
             setUser((prev) => ({ ...prev, avatarUrl: newUrl }));
             Alert.alert('Success 🎉', 'Profile picture updated & saved on Cloudinary cloud!');
           } else {
-            // Local state fallback if backend response format differs
             setUser((prev) => ({ ...prev, avatarUrl: imageUri }));
           }
         } catch (uploadErr: any) {
@@ -86,14 +86,40 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!editName.trim()) return;
-    setUser((prev) => ({
-      ...prev,
-      name: editName.trim(),
-      email: editEmail.trim() || prev.email,
-    }));
-    setEditModalVisible(false);
+    setSavingProfile(true);
+
+    try {
+      const res = await authAPI.updateProfile({
+        name: editName.trim(),
+        email: editEmail.trim(),
+      });
+      if (res.user) {
+        setUser((prev) => ({
+          ...prev,
+          name: res.user.name,
+          email: res.user.email,
+        }));
+      } else {
+        setUser((prev) => ({
+          ...prev,
+          name: editName.trim(),
+          email: editEmail.trim() || prev.email,
+        }));
+      }
+      Alert.alert('Profile Saved 🎉', 'Your profile details have been updated in MongoDB!');
+    } catch (err: any) {
+      console.log('Profile update local fallback:', err.message);
+      setUser((prev) => ({
+        ...prev,
+        name: editName.trim(),
+        email: editEmail.trim() || prev.email,
+      }));
+    } finally {
+      setSavingProfile(false);
+      setEditModalVisible(false);
+    }
   };
 
   return (

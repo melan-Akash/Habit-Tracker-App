@@ -42,7 +42,17 @@ export const authAPI = {
       body: JSON.stringify(credentials),
     }),
 
-  getMe: (token: string) => request('/auth/me', { method: 'GET' }, token),
+  getMe: (token?: string) => request('/auth/me', { method: 'GET' }, token),
+
+  updateProfile: (profileData: { name: string; email: string }, token?: string) =>
+    request(
+      '/auth/profile',
+      {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+      },
+      token
+    ),
 };
 
 // Habit Endpoints
@@ -132,12 +142,15 @@ export const aiAPI = {
 
 // Cloudinary Upload Endpoint
 export const uploadAPI = {
-  uploadAvatar: async (formData: FormData, token: string) => {
+  uploadAvatar: async (formData: FormData, token?: string) => {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const res = await fetch(`${API_BASE_URL}/upload/avatar`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       body: formData,
     });
     return await res.json();

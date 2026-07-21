@@ -14,9 +14,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../lib/theme-context';
 import { authAPI } from '../lib/api';
+import { useHabits } from '../lib/habit-store';
 
 export default function AuthScreen() {
   const { isDark, colors, toggleTheme } = useAppTheme();
+  const { setUser } = useHabits();
   const router = useRouter();
 
   const [isSignUp, setIsSignUp] = useState<boolean>(false);
@@ -47,6 +49,9 @@ export default function AuthScreen() {
           email: email.trim(),
           password: password.trim(),
         });
+        if (res.user) {
+          setUser((prev) => ({ ...prev, ...res.user }));
+        }
         if (res.token) {
           router.replace('/(tabs)');
         }
@@ -55,6 +60,9 @@ export default function AuthScreen() {
           email: email.trim(),
           password: password.trim(),
         });
+        if (res.user) {
+          setUser((prev) => ({ ...prev, ...res.user }));
+        }
         if (res.token) {
           router.replace('/(tabs)');
         }

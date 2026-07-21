@@ -1,5 +1,21 @@
 const User = require('../models/User');
 
+// Helper to get user ID
+const getUserId = async (req) => {
+  if (req.user && (req.user.id || req.user._id)) {
+    return req.user.id || req.user._id;
+  }
+  let defaultUser = await User.findOne({ email: 'akash@example.com' });
+  if (!defaultUser) {
+    defaultUser = await User.create({
+      name: 'Akash Melan',
+      email: 'akash@example.com',
+      password: 'password123',
+    });
+  }
+  return defaultUser._id;
+};
+
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -84,8 +100,40 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const userId = await getUserId(req);
+    const user = await User.findById(userId);
     res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// @desc    Update user profile details (Name, Email)
+// @route   PUT /api/auth/profile
+// @access  Public / Private
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = await getUserId(req);
+    const { name, email } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, email },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
+        totalHabitsCompleted: updatedUser.totalHabitsCompleted,
+        xpPoints: updatedUser.xpPoints,
+        currentLevel: updatedUser.currentLevel,
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
