@@ -42,7 +42,7 @@ const callOpenRouter = async (messages, maxTokens = 600, temperature = 0.7) => {
   }
 };
 
-// @desc    Interactive Multi-turn Chat with AI Habit Coach (Memory + Follow-up Questions)
+// @desc    Interactive Multi-turn Chat with AI Habit Coach
 // @route   POST /api/ai/chat
 exports.chatWithCoach = async (req, res) => {
   try {
@@ -79,12 +79,12 @@ exports.chatWithCoach = async (req, res) => {
     ) {
       return res.status(200).json({
         success: true,
-        reply: `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **2-Way Coaching**: Have a real interactive conversation with me about your goals.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans.\n3. 📊 **Predict Risks**: Get consistency analysis on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields on Add Habit screen!\n\nWhich of these would you like to try first?`,
+        reply: `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **2-Way Coaching**: Have a real interactive conversation with me about your goals.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans.\n3. 📊 **Predict Risks**: Get consistency analysis on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill all habit fields on Add Habit screen!\n\nWhich of these would you like to try first?`,
       });
     }
 
-    // 3. Construct Multi-turn Prompt with Full Conversation Memory
-    const habits = await Habit.find({ user: req.user.id });
+    // 3. Construct Multi-turn Prompt
+    const habits = req.user ? await Habit.find({ user: req.user.id }) : [];
     const habitsSummary = habits.map(h => `${h.title} (${h.category}) - ${h.currentStreak}d streak`).join(', ');
 
     const systemPrompt = `You are Nova, an elite, highly interactive AI Habit Coach powered by Llama 3.1 70B.
@@ -96,7 +96,6 @@ CRITICAL CONVERSATIONAL RULES:
 3. ALWAYS end your response with ONE clear, engaging follow-up question to keep the conversation going (e.g., "What time of day suits you best?", "Have you tried starting with 10 mins?", "What is your biggest obstacle?").
 4. Keep responses concise and structured under 120 words with emojis.`;
 
-    // Reconstruct message thread
     let messages = [{ role: 'system', content: systemPrompt }];
 
     if (Array.isArray(history) && history.length > 0) {
@@ -110,7 +109,6 @@ CRITICAL CONVERSATIONAL RULES:
       });
     }
 
-    // Append latest message
     messages.push({ role: 'user', content: message });
 
     const aiResponse = await callOpenRouter(messages);
@@ -119,7 +117,6 @@ CRITICAL CONVERSATIONAL RULES:
       return res.status(200).json({ success: true, reply: aiResponse });
     }
 
-    // Smart Conversational Fallbacks with Follow-up Questions
     let reply = `That sounds like a great focus! 🚀 To make it stick, starting with a 5-minute daily commitment works wonders. What time of day would be easiest for you to do this habit? ⏰`;
 
     if (lowerMsg.includes('study') || lowerMsg.includes('read') || lowerMsg.includes('learn')) {
@@ -226,7 +223,7 @@ Generate 3-4 habits in raw JSON format only:
 // @route   POST /api/ai/analyze-progress
 exports.analyzeProgress = async (req, res) => {
   try {
-    const habits = await Habit.find({ user: req.user.id });
+    const habits = req.user ? await Habit.find({ user: req.user.id }) : [];
 
     if (habits.length === 0) {
       return res.status(200).json({
@@ -290,7 +287,7 @@ Return ONLY a valid JSON:
   }
 };
 
-// @desc    AI Text Parser
+// @desc    AI Natural Language Text to Habit Parser
 // @route   POST /api/ai/parse-text
 exports.parseTextToHabit = async (req, res) => {
   try {
@@ -300,17 +297,20 @@ exports.parseTextToHabit = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide text input' });
     }
 
-    const systemPrompt = `Convert: "${text}" into JSON habit structure:
+    const systemPrompt = `You are a Smart NLP Parser powered by Llama 3.1 70B.
+Convert this user statement: "${text}" into a FULLY-FILLED Habit object in raw JSON format ONLY.
+Every single field MUST be intelligently populated.
+JSON structure:
 {
-  "title": "Habit Title",
-  "description": "Clear description",
-  "category": "fitness" (fitness, mind, health, learning, work, creativity),
-  "targetCount": 15,
-  "unit": "pages",
+  "title": "Clear Catchy Habit Name",
+  "description": "Detailed habit description",
+  "category": "fitness" (MUST be one of: fitness, mind, health, learning, work, creativity),
+  "targetCount": 15 (number),
+  "unit": "pages" (unit like mins, pages, liters, hours, entry, times),
   "frequency": "daily",
-  "color": "#8C7CFF",
-  "icon": "book-open-variant",
-  "timeOfDay": "evening"
+  "color": "#8C7CFF" (hex color code: fitness=#FF5252, mind=#8C7CFF, health=#00E676, learning=#FFB74D, work=#6C5CE7, creativity=#FF6584),
+  "icon": "book-open-variant" (MaterialCommunityIcon name),
+  "timeOfDay": "evening" (MUST be one of: morning, afternoon, evening, anytime)
 }`;
 
     const messages = [
@@ -324,25 +324,69 @@ exports.parseTextToHabit = async (req, res) => {
       try {
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          return res.status(200).json({ success: true, habit: JSON.parse(jsonMatch[0]) });
+          const parsed = JSON.parse(jsonMatch[0]);
+          return res.status(200).json({ success: true, habit: parsed });
         }
       } catch (e) {
         console.log('Parse text JSON error');
       }
     }
 
+    let category = 'fitness';
+    let icon = 'dumbbell';
+    let color = '#FF5252';
+    let timeOfDay = 'anytime';
+    let targetCount = 10;
+    let unit = 'mins';
+
+    const lowerText = text.toLowerCase();
+
+    if (lowerText.includes('water') || lowerText.includes('drink') || lowerText.includes('eat') || lowerText.includes('health')) {
+      category = 'health';
+      icon = 'water-outline';
+      color = '#00E676';
+      targetCount = 2;
+      unit = 'liters';
+    } else if (lowerText.includes('read') || lowerText.includes('book') || lowerText.includes('study') || lowerText.includes('learn')) {
+      category = 'learning';
+      icon = 'book-open-variant';
+      color = '#FFB74D';
+      targetCount = 15;
+      unit = 'pages';
+    } else if (lowerText.includes('meditat') || lowerText.includes('mind') || lowerText.includes('peace') || lowerText.includes('journal')) {
+      category = 'mind';
+      icon = 'meditation';
+      color = '#8C7CFF';
+      targetCount = 10;
+      unit = 'mins';
+    } else if (lowerText.includes('code') || lowerText.includes('work') || lowerText.includes('project')) {
+      category = 'work';
+      icon = 'code-tags';
+      color = '#6C5CE7';
+      targetCount = 1;
+      unit = 'hours';
+    }
+
+    if (lowerText.includes('morning') || lowerText.includes('bed') || lowerText.includes('wake')) {
+      timeOfDay = 'morning';
+    } else if (lowerText.includes('night') || lowerText.includes('sleep') || lowerText.includes('evening')) {
+      timeOfDay = 'evening';
+    } else if (lowerText.includes('afternoon')) {
+      timeOfDay = 'afternoon';
+    }
+
     res.status(200).json({
       success: true,
       habit: {
-        title: text.substring(0, 30),
-        description: text,
-        category: 'fitness',
-        targetCount: 10,
-        unit: 'mins',
+        title: text.length > 25 ? text.substring(0, 25) + '...' : text,
+        description: `Daily practice of: ${text}`,
+        category,
+        targetCount,
+        unit,
         frequency: 'daily',
-        color: '#6C5CE7',
-        icon: 'star',
-        timeOfDay: 'anytime',
+        color,
+        icon,
+        timeOfDay,
       },
     });
   } catch (error) {

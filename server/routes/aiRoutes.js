@@ -6,11 +6,11 @@ const {
   parseTextToHabit,
   optimizeHabit,
 } = require('../controllers/aiController');
-const { protect } = require('../middleware/authMiddleware');
+const { optionalAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.use(protect); // All routes require JWT authentication
+router.use(optionalAuth); // AI endpoints accessible seamlessly
 
 router.post('/chat', chatWithCoach);
 router.post('/generate-routine', generateRoutine);

@@ -6,9 +6,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
-import { Text, Surface, TextInput, Button, SegmentedButtons } from 'react-native-paper';
+import { Text, Surface, TextInput, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../lib/theme-context';
@@ -41,10 +40,10 @@ export default function AddHabitScreen() {
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [targetCount, setTargetCount] = useState('10');
   const [unit, setUnit] = useState('mins');
-  const [selectedColor, setSelectedColor] = useState('#8C7CFF');
+  const [selectedColor, setSelectedColor] = useState('#FF5252');
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'anytime'>('anytime');
 
-  // AI Magic Text Parser
+  // AI Magic Text Parser - Auto-Fills ALL Fields Completely
   const handleAiParse = async () => {
     if (!naturalText.trim()) return;
     setParsingAi(true);
@@ -52,17 +51,23 @@ export default function AddHabitScreen() {
     try {
       const res = await aiAPI.parseTextToHabit(naturalText.trim());
       if (res.habit) {
-        setTitle(res.habit.title || '');
-        setDescription(res.habit.description || '');
-        if (res.habit.category) setCategory(res.habit.category);
-        if (res.habit.targetCount) setTargetCount(res.habit.targetCount.toString());
-        if (res.habit.unit) setUnit(res.habit.unit);
-        if (res.habit.color) setSelectedColor(res.habit.color);
-        if (res.habit.timeOfDay) setTimeOfDay(res.habit.timeOfDay);
+        const h = res.habit;
+        if (h.title) setTitle(h.title);
+        if (h.description) setDescription(h.description);
+        if (h.category) {
+          setCategory(h.category);
+          const catColor = categoriesList.find((c) => c.value === h.category)?.color;
+          if (catColor) setSelectedColor(catColor);
+        }
+        if (h.targetCount) setTargetCount(h.targetCount.toString());
+        if (h.unit) setUnit(h.unit);
+        if (h.color) setSelectedColor(h.color);
+        if (h.timeOfDay) setTimeOfDay(h.timeOfDay);
       }
     } catch (e: any) {
       console.log('AI Parse error fallback:', e.message);
       setTitle(naturalText.trim());
+      setDescription(`Daily habit: ${naturalText.trim()}`);
     } finally {
       setParsingAi(false);
     }
@@ -117,8 +122,11 @@ export default function AddHabitScreen() {
         <Surface style={[styles.aiMagicCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
           <View style={styles.aiMagicRow}>
             <MaterialCommunityIcons name="auto-fix" size={22} color={colors.primary} />
-            <Text style={[styles.aiMagicTitle, { color: colors.text }]}>AI Magic Quick Input</Text>
+            <Text style={[styles.aiMagicTitle, { color: colors.text }]}>AI Magic Complete Auto-Fill</Text>
           </View>
+          <Text style={[styles.aiMagicSub, { color: colors.textSecondary }]}>
+            Type any sentence below, and AI will automatically populate ALL fields!
+          </Text>
 
           <TextInput
             mode="outlined"
@@ -139,7 +147,7 @@ export default function AddHabitScreen() {
             style={[styles.aiParseBtn, { backgroundColor: colors.primary }]}
             icon="shimmer"
           >
-            Auto-Fill Fields with AI 🪄
+            Auto-Fill All Fields Below 🪄
           </Button>
         </Surface>
 
@@ -343,6 +351,10 @@ const styles = StyleSheet.create({
   aiMagicTitle: {
     fontWeight: 'bold',
     fontSize: 15,
+  },
+  aiMagicSub: {
+    fontSize: 12,
+    marginTop: 2,
   },
   aiParseBtn: {
     marginTop: 10,
