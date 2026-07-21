@@ -43,7 +43,7 @@ const callOpenRouter = async (messages, maxTokens = 600, temperature = 0.7) => {
   }
 };
 
-// 1. @desc    Chat with AI Habit Coach
+// 1. @desc    Chat with AI Habit Coach (Natural & Warm Conversation)
 // @route   POST /api/ai/chat
 exports.chatWithCoach = async (req, res) => {
   try {
@@ -53,12 +53,30 @@ exports.chatWithCoach = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide a message' });
     }
 
+    const lowerMsg = message.trim().toLowerCase();
+
+    // Small-talk & Greeting Handler
+    const isGreeting = ['hi', 'hii', 'hiii', 'hello', 'hey', 'heyy', 'hola', 'sup', 'watsup', 'good morning', 'good evening', 'how are you'].includes(lowerMsg);
+
+    if (isGreeting) {
+      const greetingReplies = [
+        `Hey there! 👋 Great to connect with you! I'm your AI Habit Coach. How can I help you crush your goals today?`,
+        `Hello! 🌟 I'm doing fantastic and ready to help you build awesome habits! What's on your mind today?`,
+        `Hey! 👋 Ready to build some great discipline today? Tell me what you're working on or ask me for a routine! 🚀`,
+      ];
+      return res.status(200).json({
+        success: true,
+        reply: greetingReplies[Math.floor(Math.random() * greetingReplies.length)],
+      });
+    }
+
     const habits = await Habit.find({ user: req.user.id });
     const habitsSummary = habits.map(h => `${h.title} (${h.category}) - ${h.currentStreak}d streak`).join(', ');
 
-    const systemPrompt = `You are an elite, empathetic, and world-class AI Habit & Performance Coach powered by Llama 3.1 70B. 
-User's current habits: ${habitsSummary || 'No habits added yet'}.
-Provide concise, highly actionable, inspiring advice with emojis. Keep responses under 150 words.`;
+    const systemPrompt = `You are a warm, intelligent, enthusiastic, and highly encouraging AI Habit Coach named "Nova" powered by Llama 3.1 70B. 
+The user currently tracks these habits: ${habitsSummary || 'No habits added yet'}.
+If the user greets you casually, reply warmly and naturally.
+If they ask a question or share a goal, give concise, expert, inspiring advice with emojis. Keep responses under 150 words.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -71,9 +89,18 @@ Provide concise, highly actionable, inspiring advice with emojis. Keep responses
       return res.status(200).json({ success: true, reply: aiResponse });
     }
 
+    // Intelligent Fallback Replies
+    let reply = `That's a fantastic goal! 🚀 To build consistency with "${message}", start small—just 5 minutes today. Focus on your active streaks and celebrate small wins! 🔥`;
+
+    if (lowerMsg.includes('study') || lowerMsg.includes('read')) {
+      reply = `To excel at studying/reading 📚: Try the **Pomodoro Method** (25 mins focus + 5 mins break). Set a fixed daily time and remove phone distractions! 💡`;
+    } else if (lowerMsg.includes('fit') || lowerMsg.includes('gym') || lowerMsg.includes('workout')) {
+      reply = `Awesome fitness goal! 🏋️‍♂️ Consistency beats intensity. Start with a 15-min daily workout routine and track your daily streak! 🔥`;
+    }
+
     res.status(200).json({
       success: true,
-      reply: `That's an inspiring goal! 🚀 To build consistency with "${message}", start small—just 5 minutes today. Focus on your active streaks and celebrate small wins! 🔥`,
+      reply,
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -217,7 +244,6 @@ Return ONLY a valid JSON object in this format:
       }
     }
 
-    // Fallback Analysis
     const totalStreaks = habits.reduce((acc, h) => acc + h.currentStreak, 0);
     const score = Math.min(98, Math.max(65, 70 + totalStreaks * 2));
 
@@ -238,7 +264,7 @@ Return ONLY a valid JSON object in this format:
 // @route   POST /api/ai/parse-text
 exports.parseTextToHabit = async (req, res) => {
   try {
-    const { text } = req.body; // e.g. "I want to read 15 pages every night before bed"
+    const { text } = req.body;
 
     if (!text) {
       return res.status(400).json({ success: false, error: 'Please provide text input' });
@@ -276,7 +302,6 @@ Output ONLY raw JSON format:
       }
     }
 
-    // Fallback parsing
     res.status(200).json({
       success: true,
       habit: {

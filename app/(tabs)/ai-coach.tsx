@@ -38,7 +38,7 @@ export default function AICoachScreen() {
     {
       id: '1',
       sender: 'ai',
-      text: "Hello! I'm your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. What goal or habit would you like to build today?",
+      text: "Hello! I'm Nova, your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. How can I help you build great habits today?",
       time: 'Just now',
     },
   ]);
@@ -64,6 +64,8 @@ export default function AICoachScreen() {
     setInputMessage('');
     setLoading(true);
 
+    const lowerQuery = query.trim().toLowerCase();
+
     try {
       const res = await aiAPI.chat(query);
       const aiReply = res.reply || 'Great goal! Focus on small steps today 🔥';
@@ -78,10 +80,24 @@ export default function AICoachScreen() {
       setMessages((prev) => [...prev, aiMsg]);
     } catch (err: any) {
       console.log('AI Chat Fallback Response triggered:', err.message);
+
+      let responseText = `That's an inspiring goal! 🚀 To build consistency with "${query}", try starting with just 5 minutes a day. Small wins build momentum! 🔥`;
+
+      if (['hi', 'hii', 'hiii', 'hello', 'hey', 'heyy', 'hola', 'sup', 'watsup', 'how are you'].includes(lowerQuery)) {
+        responseText = `Hey there! 👋 Great to see you! I'm Nova, your AI Habit Coach. What habits or goals are we focusing on today? 🚀`;
+      } else if (lowerQuery.includes('morning') || lowerQuery.includes('routine')) {
+        responseText = `Here is a high-performance Morning Routine: 
+1. Drink 500ml water immediately 💧
+2. 5 mins stretching & 10 mins meditation 🧘
+3. Read 10 pages before opening social media 📚`;
+      } else if (lowerQuery.includes('procrastinat')) {
+        responseText = `To beat procrastination, use the **2-Minute Rule**: Tell yourself you'll do the habit for just 2 minutes. Starting is 90% of the battle! 💡`;
+      }
+
       const fallbackMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: `That's an inspiring goal! 🚀 To build consistency with "${query}", try starting with just 5 minutes a day. Small wins build momentum! 🔥`,
+        text: responseText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -330,7 +346,7 @@ export default function AICoachScreen() {
               <Text style={[styles.previewTitle, { color: colors.text }]}>Generated Habits:</Text>
               {generatedHabits.map((h, i) => (
                 <View key={i} style={[styles.habitPreviewRow, { backgroundColor: colors.surfaceVariant }]}>
-                  <MaterialCommunityIcons name={h.icon as any || 'star'} size={20} color={h.color || colors.primary} />
+                  <MaterialCommunityIcons name={(h.icon as any) || 'star'} size={20} color={h.color || colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.habitPreviewName, { color: colors.text }]}>{h.title}</Text>
                     <Text style={[styles.habitPreviewSub, { color: colors.textSecondary }]}>
