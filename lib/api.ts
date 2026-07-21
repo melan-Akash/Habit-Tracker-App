@@ -1,7 +1,6 @@
 import { API_BASE_URL } from './api-config';
 import { Habit } from '../types/database.type';
 
-// Helper for standard HTTP request with JWT token header
 const request = async (endpoint: string, options: RequestInit = {}, token?: string) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -51,35 +50,84 @@ export const habitAPI = {
   getHabits: (token?: string) => request('/habits', { method: 'GET' }, token),
 
   createHabit: (habitData: Partial<Habit>, token?: string) =>
-    request('/habits', {
-      method: 'POST',
-      body: JSON.stringify(habitData),
-    }, token),
+    request(
+      '/habits',
+      {
+        method: 'POST',
+        body: JSON.stringify(habitData),
+      },
+      token
+    ),
 
   toggleHabit: (habitId: string, token?: string) =>
-    request(`/habits/${habitId}/toggle`, {
-      method: 'PUT',
-    }, token),
+    request(
+      `/habits/${habitId}/toggle`,
+      {
+        method: 'PUT',
+      },
+      token
+    ),
 
   deleteHabit: (habitId: string, token?: string) =>
-    request(`/habits/${habitId}`, {
-      method: 'DELETE',
-    }, token),
+    request(
+      `/habits/${habitId}`,
+      {
+        method: 'DELETE',
+      },
+      token
+    ),
 };
 
-// OpenRouter AI Endpoints (Powered by Llama 3.1 70B)
+// Advanced OpenRouter AI Endpoints (Powered by Llama 3.1 70B)
 export const aiAPI = {
   chat: (message: string, token?: string) =>
-    request('/ai/chat', {
-      method: 'POST',
-      body: JSON.stringify({ message }),
-    }, token),
+    request(
+      '/ai/chat',
+      {
+        method: 'POST',
+        body: JSON.stringify({ message }),
+      },
+      token
+    ),
 
   generateRoutine: (goal: string, token?: string) =>
-    request('/ai/generate-routine', {
-      method: 'POST',
-      body: JSON.stringify({ goal }),
-    }, token),
+    request(
+      '/ai/generate-routine',
+      {
+        method: 'POST',
+        body: JSON.stringify({ goal }),
+      },
+      token
+    ),
+
+  analyzeProgress: (token?: string) =>
+    request(
+      '/ai/analyze-progress',
+      {
+        method: 'POST',
+      },
+      token
+    ),
+
+  parseTextToHabit: (text: string, token?: string) =>
+    request(
+      '/ai/parse-text',
+      {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      },
+      token
+    ),
+
+  optimizeHabit: (habitTitle: string, category: string, token?: string) =>
+    request(
+      '/ai/optimize-habit',
+      {
+        method: 'POST',
+        body: JSON.stringify({ habitTitle, category }),
+      },
+      token
+    ),
 };
 
 // Cloudinary Upload Endpoint

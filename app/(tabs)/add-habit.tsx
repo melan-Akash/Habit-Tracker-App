@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Text, Surface, TextInput, Button, SegmentedButtons } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useAppTheme } from '../../lib/theme-context';
 import { useHabits } from '../../lib/habit-store';
 import { HabitCategory } from '../../types/database.type';
+import { aiAPI } from '../../lib/api';
 
 const categoriesList: { label: string; value: HabitCategory; icon: string; color: string }[] = [
   { label: 'Fitness', value: 'fitness', icon: 'dumbbell', color: '#FF5252' },
@@ -30,6 +32,9 @@ export default function AddHabitScreen() {
   const { addHabit } = useHabits();
   const router = useRouter();
 
+  const [naturalText, setNaturalText] = useState('');
+  const [parsingAi, setParsingAi] = useState(false);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<HabitCategory>('fitness');
@@ -38,6 +43,30 @@ export default function AddHabitScreen() {
   const [unit, setUnit] = useState('mins');
   const [selectedColor, setSelectedColor] = useState('#8C7CFF');
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening' | 'anytime'>('anytime');
+
+  // AI Magic Text Parser
+  const handleAiParse = async () => {
+    if (!naturalText.trim()) return;
+    setParsingAi(true);
+
+    try {
+      const res = await aiAPI.parseTextToHabit(naturalText.trim());
+      if (res.habit) {
+        setTitle(res.habit.title || '');
+        setDescription(res.habit.description || '');
+        if (res.habit.category) setCategory(res.habit.category);
+        if (res.habit.targetCount) setTargetCount(res.habit.targetCount.toString());
+        if (res.habit.unit) setUnit(res.habit.unit);
+        if (res.habit.color) setSelectedColor(res.habit.color);
+        if (res.habit.timeOfDay) setTimeOfDay(res.habit.timeOfDay);
+      }
+    } catch (e: any) {
+      console.log('AI Parse error fallback:', e.message);
+      setTitle(naturalText.trim());
+    } finally {
+      setParsingAi(false);
+    }
+  };
 
   const handleSubmit = () => {
     if (!title.trim()) return;
@@ -59,9 +88,9 @@ export default function AddHabitScreen() {
       timeOfDay,
     });
 
-    // Reset and navigate to index
     setTitle('');
     setDescription('');
+    setNaturalText('');
     router.push('/(tabs)');
   };
 
@@ -83,6 +112,36 @@ export default function AddHabitScreen() {
             Build small habits, achieve big goals!
           </Text>
         </View>
+
+        {/* AI Magic Text Input Banner */}
+        <Surface style={[styles.aiMagicCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+          <View style={styles.aiMagicRow}>
+            <MaterialCommunityIcons name="auto-fix" size={22} color={colors.primary} />
+            <Text style={[styles.aiMagicTitle, { color: colors.text }]}>AI Magic Quick Input</Text>
+          </View>
+
+          <TextInput
+            mode="outlined"
+            placeholder="e.g. Read 20 pages every night before sleeping"
+            value={naturalText}
+            onChangeText={setNaturalText}
+            style={[styles.input, { backgroundColor: colors.inputBg, marginTop: 8 }]}
+            outlineColor={colors.cardBorder}
+            activeOutlineColor={colors.primary}
+            textColor={colors.text}
+          />
+
+          <Button
+            mode="contained"
+            onPress={handleAiParse}
+            loading={parsingAi}
+            disabled={!naturalText.trim() || parsingAi}
+            style={[styles.aiParseBtn, { backgroundColor: colors.primary }]}
+            icon="shimmer"
+          >
+            Auto-Fill Fields with AI 🪄
+          </Button>
+        </Surface>
 
         {/* Habit Card Form */}
         <Surface style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
@@ -260,7 +319,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   title: {
     fontWeight: 'bold',
@@ -268,6 +327,26 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     marginTop: 4,
+  },
+  aiMagicCard: {
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    elevation: 2,
+    marginBottom: 20,
+  },
+  aiMagicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiMagicTitle: {
+    fontWeight: 'bold',
+    fontSize: 15,
+  },
+  aiParseBtn: {
+    marginTop: 10,
+    borderRadius: 14,
   },
   formCard: {
     borderRadius: 20,
