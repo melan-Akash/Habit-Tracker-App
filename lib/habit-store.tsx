@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Habit, AchievementBadge, UserProfile } from '../types/database.type';
+import {
+  requestNotificationPermissions,
+  sendCheckInNotification,
+  scheduleDailyReminders,
+} from './notification-service';
 
 interface HabitContextType {
   habits: Habit[];
@@ -197,6 +202,16 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile>(initialUser);
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
+  useEffect(() => {
+    // Request notification permissions & schedule daily reminders on app launch
+    (async () => {
+      const granted = await requestNotificationPermissions();
+      if (granted) {
+        scheduleDailyReminders(true, true);
+      }
+    })();
+  }, []);
+
   const toggleHabit = (id: string) => {
     setHabits((prev) =>
       prev.map((habit) => {
@@ -206,6 +221,11 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
             ? habit.currentStreak + 1
             : Math.max(0, habit.currentStreak - 1);
           const newBest = Math.max(habit.bestStreak, newStreak);
+
+          if (isNowCompleted) {
+            // Trigger instant celebration notification!
+            sendCheckInNotification(habit.title, newStreak);
+          }
 
           // Update XP
           setUser((u) => ({
