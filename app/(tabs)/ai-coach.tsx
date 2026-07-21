@@ -24,7 +24,7 @@ interface ChatMessage {
 const quickPrompts = [
   '⚡ Suggest a 10-min Morning Routine',
   '🧠 How to stop procrastinating?',
-  '🏋️‍♂️ Habits for better energy & sleep',
+  '🤖 What can you do for me?',
   '📚 Tips to study 2 hours daily',
 ];
 
@@ -38,7 +38,7 @@ export default function AICoachScreen() {
     {
       id: '1',
       sender: 'ai',
-      text: "Hello! I'm Nova, your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. How can I help you build great habits today?",
+      text: "Hello! I'm Nova, your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. Ask me anything or tap 'AI Routine' to build a custom habit plan!",
       time: 'Just now',
     },
   ]);
@@ -81,10 +81,17 @@ export default function AICoachScreen() {
     } catch (err: any) {
       console.log('AI Chat Fallback Response triggered:', err.message);
 
-      let responseText = `That's an inspiring goal! 🚀 To build consistency with "${query}", try starting with just 5 minutes a day. Small wins build momentum! 🔥`;
+      let responseText = `Small daily consistency is the key to building lasting habits! 🚀 Focus on taking the first 5-minute action today. You've got this! 🔥`;
 
       if (['hi', 'hii', 'hiii', 'hello', 'hey', 'heyy', 'hola', 'sup', 'watsup', 'how are you'].includes(lowerQuery)) {
         responseText = `Hey there! 👋 Great to see you! I'm Nova, your AI Habit Coach. What habits or goals are we focusing on today? 🚀`;
+      } else if (
+        lowerQuery.includes('what can you do') ||
+        lowerQuery.includes('what you can do') ||
+        lowerQuery.includes('who are you') ||
+        lowerQuery.includes('features')
+      ) {
+        responseText = `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **Answer Questions**: Ask me how to beat procrastination, improve sleep, or study effectively.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans for any goal.\n3. 📊 **Performance Analytics**: View AI Consistency Scores on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields by typing natural sentences on the Add Habit screen!`;
       } else if (lowerQuery.includes('morning') || lowerQuery.includes('routine')) {
         responseText = `Here is a high-performance Morning Routine: 
 1. Drink 500ml water immediately 💧

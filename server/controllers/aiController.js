@@ -3,7 +3,6 @@ const Habit = require('../models/Habit');
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'meta-llama/llama-3.1-70b-instruct';
 
-// Helper function to call OpenRouter API (Meta Llama 3.1 70B Instruct)
 const callOpenRouter = async (messages, maxTokens = 600, temperature = 0.7) => {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -43,7 +42,7 @@ const callOpenRouter = async (messages, maxTokens = 600, temperature = 0.7) => {
   }
 };
 
-// 1. @desc    Chat with AI Habit Coach (Natural & Warm Conversation)
+// @desc    Chat with AI Habit Coach
 // @route   POST /api/ai/chat
 exports.chatWithCoach = async (req, res) => {
   try {
@@ -55,14 +54,14 @@ exports.chatWithCoach = async (req, res) => {
 
     const lowerMsg = message.trim().toLowerCase();
 
-    // Small-talk & Greeting Handler
+    // 1. Casual Greetings
     const isGreeting = ['hi', 'hii', 'hiii', 'hello', 'hey', 'heyy', 'hola', 'sup', 'watsup', 'good morning', 'good evening', 'how are you'].includes(lowerMsg);
 
     if (isGreeting) {
       const greetingReplies = [
-        `Hey there! 👋 Great to connect with you! I'm your AI Habit Coach. How can I help you crush your goals today?`,
-        `Hello! 🌟 I'm doing fantastic and ready to help you build awesome habits! What's on your mind today?`,
-        `Hey! 👋 Ready to build some great discipline today? Tell me what you're working on or ask me for a routine! 🚀`,
+        `Hey there! 👋 I'm Nova, your AI Habit Coach powered by Llama 3.1 70B! How can I help you build your routine today?`,
+        `Hello! 🌟 I'm feeling energized and ready to help you hit your streak goals! What's on your mind?`,
+        `Hey! 👋 Ready to build great habits today? Ask me for advice or tap 'AI Routine' to generate a 3-habit plan! 🚀`,
       ];
       return res.status(200).json({
         success: true,
@@ -70,13 +69,27 @@ exports.chatWithCoach = async (req, res) => {
       });
     }
 
+    // 2. Capabilities & Info Questions
+    if (
+      lowerMsg.includes('what can you do') ||
+      lowerMsg.includes('what you can do') ||
+      lowerMsg.includes('who are you') ||
+      lowerMsg.includes('help me') ||
+      lowerMsg.includes('features')
+    ) {
+      return res.status(200).json({
+        success: true,
+        reply: `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **Answer Questions**: Ask me how to beat procrastination, improve sleep, or study effectively.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans for any goal.\n3. 📊 **Performance Analytics**: View AI Consistency Scores on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields by typing natural sentences on the Add Habit screen!`,
+      });
+    }
+
+    // 3. Try Live OpenRouter API (Llama 3.1 70B)
     const habits = await Habit.find({ user: req.user.id });
     const habitsSummary = habits.map(h => `${h.title} (${h.category}) - ${h.currentStreak}d streak`).join(', ');
 
-    const systemPrompt = `You are a warm, intelligent, enthusiastic, and highly encouraging AI Habit Coach named "Nova" powered by Llama 3.1 70B. 
-The user currently tracks these habits: ${habitsSummary || 'No habits added yet'}.
-If the user greets you casually, reply warmly and naturally.
-If they ask a question or share a goal, give concise, expert, inspiring advice with emojis. Keep responses under 150 words.`;
+    const systemPrompt = `You are Nova, an elite, warm, encouraging AI Habit Coach powered by Llama 3.1 70B. 
+User's current habits: ${habitsSummary || 'No habits added yet'}.
+Provide short, actionable, inspiring advice with emojis. Keep responses friendly and under 120 words.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -89,13 +102,15 @@ If they ask a question or share a goal, give concise, expert, inspiring advice w
       return res.status(200).json({ success: true, reply: aiResponse });
     }
 
-    // Intelligent Fallback Replies
-    let reply = `That's a fantastic goal! 🚀 To build consistency with "${message}", start small—just 5 minutes today. Focus on your active streaks and celebrate small wins! 🔥`;
+    // 4. Intelligent Smart Fallback Replies (NO generic "consistency with X" template)
+    let reply = `That's an inspiring focus! 🚀 Small daily consistency is the secret to big wins. Start with just 5-10 minutes today and celebrate your streak! 🔥`;
 
-    if (lowerMsg.includes('study') || lowerMsg.includes('read')) {
-      reply = `To excel at studying/reading 📚: Try the **Pomodoro Method** (25 mins focus + 5 mins break). Set a fixed daily time and remove phone distractions! 💡`;
-    } else if (lowerMsg.includes('fit') || lowerMsg.includes('gym') || lowerMsg.includes('workout')) {
-      reply = `Awesome fitness goal! 🏋️‍♂️ Consistency beats intensity. Start with a 15-min daily workout routine and track your daily streak! 🔥`;
+    if (lowerMsg.includes('study') || lowerMsg.includes('read') || lowerMsg.includes('learn')) {
+      reply = `To excel at study & learning 📚:\n• Use the **Pomodoro Technique** (25 mins focus + 5 mins break)\n• Set a fixed daily study slot\n• Keep your phone in another room! 💡`;
+    } else if (lowerMsg.includes('fit') || lowerMsg.includes('gym') || lowerMsg.includes('workout') || lowerMsg.includes('exercise')) {
+      reply = `Awesome fitness goal! 🏋️‍♂️ Consistency beats intensity. Start with a 15-min daily workout and track your flame streak! 🔥`;
+    } else if (lowerMsg.includes('water') || lowerMsg.includes('health') || lowerMsg.includes('sleep')) {
+      reply = `Hydration & Sleep setup 💧😴:\n• Keep a 1L water bottle at your desk\n• Drink 1 glass immediately after waking up\n• Avoid screens 30 mins before sleep!`;
     }
 
     res.status(200).json({
@@ -113,14 +128,13 @@ exports.generateRoutine = async (req, res) => {
   try {
     const { goal } = req.body;
 
-    const systemPrompt = `You are an expert AI Habit Architect. The user wants to achieve: "${goal || 'Improve health and focus'}".
-Generate 3-4 recommended habits in JSON format.
-Output ONLY raw JSON with this exact array structure:
+    const systemPrompt = `You are an expert AI Habit Architect. User goal: "${goal || 'Improve health and focus'}".
+Generate 3-4 habits in raw JSON format only:
 [
   {
     "title": "Habit Title",
     "description": "Short description",
-    "category": "fitness" (must be one of: fitness, mind, health, learning, work, creativity),
+    "category": "fitness" (fitness, mind, health, learning, work, creativity),
     "targetCount": 10,
     "unit": "mins",
     "frequency": "daily",
@@ -191,7 +205,7 @@ Output ONLY raw JSON with this exact array structure:
   }
 };
 
-// 3. @desc    AI Performance Analysis & Risk Prediction
+// 3. @desc    AI Performance Analysis
 // @route   POST /api/ai/analyze-progress
 exports.analyzeProgress = async (req, res) => {
   try {
@@ -215,15 +229,14 @@ exports.analyzeProgress = async (req, res) => {
       completedToday: h.completedToday,
     }));
 
-    const systemPrompt = `You are an AI Performance Analyst powered by Llama 3.1 70B.
-Analyze the user's habits data: ${JSON.stringify(habitsData)}.
-Return ONLY a valid JSON object in this format:
+    const systemPrompt = `Analyze user habits data: ${JSON.stringify(habitsData)}.
+Return ONLY a valid JSON:
 {
-  "score": 88 (number between 0 and 100),
-  "statusTitle": "Unstoppable Achiever" (short title),
-  "riskHabit": "Habit Title at highest risk of breaking streak or None",
-  "analysis": "Short 2-sentence summary of overall progress",
-  "recommendation": "One actionable tip to boost consistency"
+  "score": 88,
+  "statusTitle": "Unstoppable Achiever",
+  "riskHabit": "Habit Title at risk or None",
+  "analysis": "Short 2-sentence summary",
+  "recommendation": "One actionable tip"
 }`;
 
     const messages = [
@@ -260,7 +273,7 @@ Return ONLY a valid JSON object in this format:
   }
 };
 
-// 4. @desc    AI Natural Language Text to Habit Parser
+// 4. @desc    AI Text Parser
 // @route   POST /api/ai/parse-text
 exports.parseTextToHabit = async (req, res) => {
   try {
@@ -270,8 +283,7 @@ exports.parseTextToHabit = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide text input' });
     }
 
-    const systemPrompt = `You are a Smart NLP Parser. Convert this user statement: "${text}" into a structured Habit object.
-Output ONLY raw JSON format:
+    const systemPrompt = `Convert: "${text}" into JSON habit structure:
 {
   "title": "Habit Title",
   "description": "Clear description",
@@ -281,7 +293,7 @@ Output ONLY raw JSON format:
   "frequency": "daily",
   "color": "#8C7CFF",
   "icon": "book-open-variant",
-  "timeOfDay": "evening" (morning, afternoon, evening, anytime)
+  "timeOfDay": "evening"
 }`;
 
     const messages = [
@@ -321,15 +333,13 @@ Output ONLY raw JSON format:
   }
 };
 
-// 5. @desc    AI Habit Stack & Optimization Strategy
+// 5. @desc    AI Habit Optimizer
 // @route   POST /api/ai/optimize-habit
 exports.optimizeHabit = async (req, res) => {
   try {
     const { habitTitle, category } = req.body;
 
-    const systemPrompt = `You are a Habit Psychology Expert. The user wants to optimize their habit: "${habitTitle}" (${category}).
-Provide 3 atomic habit optimization tips based on James Clear's Atomic Habits principles (Cue, Craving, Response, Reward).
-Keep output under 100 words in friendly bullet points with emojis.`;
+    const systemPrompt = `Optimize habit: "${habitTitle}" (${category}) using Atomic Habits principles. Keep under 100 words in bullet points.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
