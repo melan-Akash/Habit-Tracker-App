@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { MD3LightTheme, MD3DarkTheme, PaperProvider } from 'react-native-paper';
+import { MD3LightTheme, MD3DarkTheme, PaperProvider, configureFonts } from 'react-native-paper';
 
 export interface AppTheme {
   isDark: boolean;
@@ -77,6 +77,10 @@ const lightColors = {
   tabBarInactive: '#94A3B8',
 };
 
+const fontConfig = {
+  fontFamily: 'Outfit_400Regular',
+};
+
 const ThemeContext = createContext<AppTheme>({
   isDark: true,
   colors: darkColors,
@@ -101,6 +105,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
           background: darkColors.background,
           surface: darkColors.card,
         },
+        fonts: configureFonts({ config: fontConfig }),
       }
     : {
         ...MD3LightTheme,
@@ -110,6 +115,7 @@ export const AppThemeProvider = ({ children }: { children: ReactNode }) => {
           background: lightColors.background,
           surface: lightColors.card,
         },
+        fonts: configureFonts({ config: fontConfig }),
       };
 
   return (
