@@ -17,12 +17,12 @@ export default function TabLayout() {
           borderTopColor: colors.cardBorder,
           borderTopWidth: 1,
           height: 64,
-          paddingBottom: 10,
-          paddingTop: 8,
+          paddingBottom: 8,
+          paddingTop: 6,
           elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
@@ -35,7 +35,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'calendar-check' : 'calendar-check-outline'}
-              size={22}
+              size={24}
               color={color}
             />
           ),
@@ -50,36 +50,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'robot' : 'robot-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      {/* 3. Monthly Calendar */}
-      <Tabs.Screen
-        name="calendar"
-        options={{
-          title: "Calendar",
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons
-              name={focused ? 'calendar-month' : 'calendar-month-outline'}
-              size={22}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      {/* 4. Add Habit */}
-      <Tabs.Screen
-        name="add-habit"
-        options={{
-          title: "Add Habit",
-          tabBarIcon: ({ color, focused }) => (
-            <MaterialCommunityIcons
-              name={focused ? 'plus-circle' : 'plus-circle-outline'}
               size={24}
               color={color}
             />
@@ -87,22 +57,22 @@ export default function TabLayout() {
         }}
       />
 
-      {/* 5. Streaks & Badges */}
+      {/* 3. Add Habit */}
       <Tabs.Screen
-        name="streaks"
+        name="add-habit"
         options={{
-          title: "Streaks",
+          title: "Add Habit",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-              name={focused ? 'fire' : 'fire-alert'}
-              size={22}
+              name={focused ? 'plus-circle' : 'plus-circle-outline'}
+              size={26}
               color={color}
             />
           ),
         }}
       />
 
-      {/* 6. Profile & Settings */}
+      {/* 4. Profile */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -110,10 +80,25 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? 'account-circle' : 'account-circle-outline'}
-              size={22}
+              size={24}
               color={color}
             />
           ),
+        }}
+      />
+
+      {/* Hidden from bottom bar, accessible via Dashboard Menu */}
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="streaks"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

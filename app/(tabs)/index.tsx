@@ -121,6 +121,36 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* Quick Navigation Menu Bar for Calendar, Streaks, and Settings */}
+      <View style={styles.dashboardMenuRow}>
+        <TouchableOpacity
+          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+          onPress={() => router.push('/calendar')}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="calendar-month" size={18} color={colors.primary} />
+          <Text style={[styles.menuChipText, { color: colors.text }]}>Calendar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+          onPress={() => router.push('/streaks')}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="fire" size={18} color={colors.gold} />
+          <Text style={[styles.menuChipText, { color: colors.text }]}>Streaks</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.menuChip, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+          onPress={() => router.push('/settings')}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="cog-outline" size={18} color={colors.textSecondary} />
+          <Text style={[styles.menuChipText, { color: colors.text }]}>Settings</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Horizontal Weekly Calendar Strip */}
       <View style={styles.weekStripContainer}>
         {currentWeek.map((item) => {
@@ -632,6 +662,27 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
+    fontWeight: '600',
+  },
+  dashboardMenuRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  menuChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  menuChipText: {
+    fontSize: 12,
     fontWeight: 'bold',
   },
   deleteBtn: {

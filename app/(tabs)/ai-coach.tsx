@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -31,6 +31,7 @@ const quickPrompts = [
 export default function AICoachScreen() {
   const { colors } = useAppTheme();
   const { addHabit } = useHabits();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [inputMessage, setInputMessage] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -56,11 +57,10 @@ export default function AICoachScreen() {
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       sender: 'user',
-      text: query,
+      text: query.trim(),
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    // Prepare current history array for LLM memory
     const historyForLlm = messages.map((m) => ({
       role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
       content: m.text,
@@ -69,6 +69,10 @@ export default function AICoachScreen() {
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
     setLoading(true);
+
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
 
     const lowerQuery = query.trim().toLowerCase();
 
@@ -105,8 +109,6 @@ export default function AICoachScreen() {
 3. Read 10 pages before opening your phone 📚
 
 Which of these 3 would you like to start tomorrow morning?`;
-      } else if (lowerQuery.includes('procrastinat')) {
-        responseText = `To beat procrastination, try the **2-Minute Rule**: Commit to doing the task for just 2 minutes. Which habit are you currently postponing?`;
       }
 
       const fallbackMsg: ChatMessage = {
@@ -118,6 +120,9 @@ Which of these 3 would you like to start tomorrow morning?`;
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
       setLoading(false);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
   };
 
@@ -143,6 +148,7 @@ Which of these 3 would you like to start tomorrow morning?`;
           color: '#00E676',
           icon: 'water-outline',
           timeOfDay: 'morning',
+          reminderTime: '08:00',
         },
         {
           title: 'Core Strength Workout',
@@ -154,6 +160,7 @@ Which of these 3 would you like to start tomorrow morning?`;
           color: '#FF5252',
           icon: 'dumbbell',
           timeOfDay: 'afternoon',
+          reminderTime: '17:30',
         },
         {
           title: 'Mindful Reset',
@@ -165,6 +172,7 @@ Which of these 3 would you like to start tomorrow morning?`;
           color: '#8C7CFF',
           icon: 'meditation',
           timeOfDay: 'evening',
+          reminderTime: '20:30',
         },
       ]);
     } finally {
@@ -187,6 +195,7 @@ Which of these 3 would you like to start tomorrow morning?`;
         bestStreak: 0,
         completedToday: false,
         timeOfDay: h.timeOfDay || 'anytime',
+        reminderTime: h.reminderTime || '08:00',
       });
     });
 
@@ -199,14 +208,12 @@ Which of these 3 would you like to start tomorrow morning?`;
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: colors.background }]}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.topContentContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text variant="headlineSmall" style={[styles.title, { color: colors.text }]}>
               AI Habit Coach 🤖
             </Text>
@@ -220,7 +227,7 @@ Which of these 3 would you like to start tomorrow morning?`;
             onPress={() => setModalVisible(true)}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="auto-fix" size={18} color="#FFF" />
+            <MaterialCommunityIcons name="auto-fix" size={16} color="#FFF" />
             <Text style={styles.generateBtnText}>AI Routine</Text>
           </TouchableOpacity>
         </View>
@@ -240,60 +247,77 @@ Which of these 3 would you like to start tomorrow morning?`;
             </TouchableOpacity>
           ))}
         </ScrollView>
+      </View>
 
-        {/* Chat Messages */}
-        <View style={styles.chatContainer}>
-          {messages.map((msg) => {
-            const isAI = msg.sender === 'ai';
-            return (
-              <View
-                key={msg.id}
+      {/* Chat Messages ScrollArea */}
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.chatScroll}
+        contentContainerStyle={styles.chatScrollContent}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {messages.map((msg) => {
+          const isAI = msg.sender === 'ai';
+          return (
+            <View
+              key={msg.id}
+              style={[
+                styles.messageRow,
+                { justifyContent: isAI ? 'flex-start' : 'flex-end' },
+              ]}
+            >
+              {isAI && (
+                <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                  <MaterialCommunityIcons name="robot" size={18} color="#FFF" />
+                </View>
+              )}
+
+              <Surface
                 style={[
-                  styles.messageWrapper,
-                  { justifyContent: isAI ? 'flex-start' : 'flex-end' },
+                  styles.messageBubble,
+                  isAI
+                    ? {
+                        backgroundColor: colors.card,
+                        borderColor: colors.cardBorder,
+                        borderWidth: 1,
+                        borderTopLeftRadius: 4,
+                      }
+                    : {
+                        backgroundColor: colors.primary,
+                        borderTopRightRadius: 4,
+                      },
                 ]}
               >
-                {isAI && (
-                  <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-                    <MaterialCommunityIcons name="robot" size={20} color="#FFF" />
-                  </View>
-                )}
-
-                <Surface
+                <Text style={[styles.messageText, { color: isAI ? colors.text : '#FFF' }]}>
+                  {msg.text}
+                </Text>
+                <Text
                   style={[
-                    styles.messageBubble,
-                    {
-                      backgroundColor: isAI ? colors.card : colors.primary,
-                      borderColor: isAI ? colors.cardBorder : colors.primary,
-                      borderWidth: isAI ? 1 : 0,
-                    },
+                    styles.messageTime,
+                    { color: isAI ? colors.textSecondary : 'rgba(255,255,255,0.75)' },
                   ]}
                 >
-                  <Text style={[styles.messageText, { color: isAI ? colors.text : '#FFF' }]}>
-                    {msg.text}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.messageTime,
-                      { color: isAI ? colors.textSecondary : 'rgba(255,255,255,0.7)' },
-                    ]}
-                  >
-                    {msg.time}
-                  </Text>
-                </Surface>
-              </View>
-            );
-          })}
+                  {msg.time}
+                </Text>
+              </Surface>
+            </View>
+          );
+        })}
 
-          {loading && (
-            <View style={styles.loadingRow}>
+        {loading && (
+          <View style={styles.loadingRow}>
+            <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+              <MaterialCommunityIcons name="robot" size={18} color="#FFF" />
+            </View>
+            <Surface style={[styles.loadingBubble, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                Llama 3.1 70B is thinking...
+                Llama 3.1 70B is typing...
               </Text>
-            </View>
-          )}
-        </View>
+            </Surface>
+          </View>
+        )}
       </ScrollView>
 
       {/* Message Input Bar */}
@@ -365,7 +389,7 @@ Which of these 3 would you like to start tomorrow morning?`;
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.habitPreviewName, { color: colors.text }]}>{h.title}</Text>
                     <Text style={[styles.habitPreviewSub, { color: colors.textSecondary }]}>
-                      {h.targetCount} {h.unit} • {h.timeOfDay}
+                      {h.targetCount} {h.unit} • {h.reminderTime || '08:00'}
                     </Text>
                   </View>
                 </View>
@@ -390,70 +414,79 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  contentContainer: {
-    padding: 18,
-    paddingTop: 54,
-    paddingBottom: 20,
+  topContentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 50,
+    paddingBottom: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   title: {
     fontWeight: 'bold',
+    fontSize: 20,
   },
   subtitle: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 1,
   },
   generateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 18,
   },
   generateBtnText: {
     color: '#FFF',
     fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 12,
   },
   chipScrollView: {
-    marginBottom: 16,
+    marginBottom: 6,
   },
   promptChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
     borderWidth: 1,
-    marginRight: 10,
+    marginRight: 8,
   },
   promptChipText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  chatContainer: {
-    gap: 14,
+  chatScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
-  messageWrapper: {
+  chatScrollContent: {
+    paddingVertical: 10,
+    gap: 12,
+  },
+  messageRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
+    alignItems: 'flex-end',
+    gap: 8,
+    marginVertical: 2,
   },
   avatarCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 2,
   },
   messageBubble: {
-    maxWidth: '80%',
+    maxWidth: '82%',
     borderRadius: 18,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     elevation: 1,
   },
   messageText: {
@@ -462,14 +495,23 @@ const styles = StyleSheet.create({
   },
   messageTime: {
     fontSize: 10,
-    marginTop: 6,
+    marginTop: 4,
     alignSelf: 'flex-end',
   },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 10,
+    gap: 8,
+    marginVertical: 4,
+  },
+  loadingBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
   },
   loadingText: {
     fontSize: 13,
@@ -478,48 +520,50 @@ const styles = StyleSheet.create({
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderTopWidth: 1,
     gap: 10,
   },
   chatInput: {
     flex: 1,
+    height: 46,
   },
   sendBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalContent: {
-    padding: 22,
-    margin: 20,
-    borderRadius: 24,
+    padding: 20,
+    margin: 18,
+    borderRadius: 22,
     borderWidth: 1,
   },
   modalTitle: {
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   modalSub: {
-    fontSize: 13,
-    marginBottom: 16,
+    fontSize: 12,
+    marginBottom: 14,
   },
   modalInput: {
-    marginBottom: 14,
+    marginBottom: 12,
   },
   modalGenBtn: {
     borderRadius: 14,
   },
   previewContainer: {
-    marginTop: 18,
+    marginTop: 14,
     gap: 8,
   },
   previewTitle: {
     fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 13,
+    marginBottom: 2,
   },
   habitPreviewRow: {
     flexDirection: 'row',
@@ -536,7 +580,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   importBtn: {
-    marginTop: 10,
+    marginTop: 8,
     borderRadius: 14,
   },
 });
