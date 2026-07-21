@@ -60,9 +60,8 @@ export default function AuthScreen() {
         }
       }
     } catch (err: any) {
-      console.log('Auth API Error, proceeding with local session:', err.message);
-      // Seamless fallback to demo session so user is never blocked
-      router.replace('/(tabs)');
+      console.log('Auth API Error:', err.message);
+      setError(err.message || 'Authentication failed. Check your network or credentials.');
     } finally {
       setLoading(false);
     }
