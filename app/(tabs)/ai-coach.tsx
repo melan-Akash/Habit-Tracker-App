@@ -38,7 +38,7 @@ export default function AICoachScreen() {
     {
       id: '1',
       sender: 'ai',
-      text: "Hello! I'm Nova, your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. Ask me anything or tap 'AI Routine' to build a custom habit plan!",
+      text: "Hello! I'm Nova, your interactive AI Habit Coach powered by Meta Llama 3.1 70B 🤖. Tell me, what is your #1 goal or habit you want to build right now?",
       time: 'Just now',
     },
   ]);
@@ -60,6 +60,12 @@ export default function AICoachScreen() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
+    // Prepare current history array for LLM memory
+    const historyForLlm = messages.map((m) => ({
+      role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: m.text,
+    }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInputMessage('');
     setLoading(true);
@@ -67,8 +73,8 @@ export default function AICoachScreen() {
     const lowerQuery = query.trim().toLowerCase();
 
     try {
-      const res = await aiAPI.chat(query);
-      const aiReply = res.reply || 'Great goal! Focus on small steps today 🔥';
+      const res = await aiAPI.chat(query, historyForLlm);
+      const aiReply = res.reply || 'Great goal! What time of day works best for you? 🔥';
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -81,24 +87,26 @@ export default function AICoachScreen() {
     } catch (err: any) {
       console.log('AI Chat Fallback Response triggered:', err.message);
 
-      let responseText = `Small daily consistency is the key to building lasting habits! 🚀 Focus on taking the first 5-minute action today. You've got this! 🔥`;
+      let responseText = `That sounds like a great focus! 🚀 Starting small helps build momentum. What time of day works best for you to practice this habit? ⏰`;
 
       if (['hi', 'hii', 'hiii', 'hello', 'hey', 'heyy', 'hola', 'sup', 'watsup', 'how are you'].includes(lowerQuery)) {
-        responseText = `Hey there! 👋 Great to see you! I'm Nova, your AI Habit Coach. What habits or goals are we focusing on today? 🚀`;
+        responseText = `Hey there! 👋 Great to see you! I'm Nova, your AI Habit Coach. What specific goal are you focusing on today? 🚀`;
       } else if (
         lowerQuery.includes('what can you do') ||
         lowerQuery.includes('what you can do') ||
         lowerQuery.includes('who are you') ||
         lowerQuery.includes('features')
       ) {
-        responseText = `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **Answer Questions**: Ask me how to beat procrastination, improve sleep, or study effectively.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans for any goal.\n3. 📊 **Performance Analytics**: View AI Consistency Scores on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields by typing natural sentences on the Add Habit screen!`;
+        responseText = `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **2-Way Interactive Coaching**: Ask me questions & answer my follow-ups!\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create habit plans.\n3. 📊 **Performance Analytics**: Check your consistency score on Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields on Add Habit screen!\n\nWhich feature would you like to explore first?`;
       } else if (lowerQuery.includes('morning') || lowerQuery.includes('routine')) {
         responseText = `Here is a high-performance Morning Routine: 
-1. Drink 500ml water immediately 💧
-2. 5 mins stretching & 10 mins meditation 🧘
-3. Read 10 pages before opening social media 📚`;
+1. Drink 500ml water 💧
+2. 5 mins stretching & meditation 🧘
+3. Read 10 pages before opening your phone 📚
+
+Which of these 3 would you like to start tomorrow morning?`;
       } else if (lowerQuery.includes('procrastinat')) {
-        responseText = `To beat procrastination, use the **2-Minute Rule**: Tell yourself you'll do the habit for just 2 minutes. Starting is 90% of the battle! 💡`;
+        responseText = `To beat procrastination, try the **2-Minute Rule**: Commit to doing the task for just 2 minutes. Which habit are you currently postponing?`;
       }
 
       const fallbackMsg: ChatMessage = {

@@ -78,14 +78,14 @@ export const habitAPI = {
     ),
 };
 
-// Advanced OpenRouter AI Endpoints (Powered by Llama 3.1 70B)
+// Advanced OpenRouter AI Endpoints (Multi-turn Conversation with Llama 3.1 70B)
 export const aiAPI = {
-  chat: (message: string, token?: string) =>
+  chat: (message: string, history?: { role: 'user' | 'assistant'; content: string }[], token?: string) =>
     request(
       '/ai/chat',
       {
         method: 'POST',
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, history }),
       },
       token
     ),

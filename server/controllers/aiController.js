@@ -42,11 +42,11 @@ const callOpenRouter = async (messages, maxTokens = 600, temperature = 0.7) => {
   }
 };
 
-// @desc    Chat with AI Habit Coach
+// @desc    Interactive Multi-turn Chat with AI Habit Coach (Memory + Follow-up Questions)
 // @route   POST /api/ai/chat
 exports.chatWithCoach = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, history } = req.body;
 
     if (!message) {
       return res.status(400).json({ success: false, error: 'Please provide a message' });
@@ -59,9 +59,9 @@ exports.chatWithCoach = async (req, res) => {
 
     if (isGreeting) {
       const greetingReplies = [
-        `Hey there! 👋 I'm Nova, your AI Habit Coach powered by Llama 3.1 70B! How can I help you build your routine today?`,
-        `Hello! 🌟 I'm feeling energized and ready to help you hit your streak goals! What's on your mind?`,
-        `Hey! 👋 Ready to build great habits today? Ask me for advice or tap 'AI Routine' to generate a 3-habit plan! 🚀`,
+        `Hey there! 👋 I'm Nova, your AI Habit Coach powered by Llama 3.1 70B! What specific habit or goal are you working on today? 🚀`,
+        `Hello! 🌟 I'm doing great and ready to help you hit your goals! What area of your life would you like to improve today? (e.g. Health, Fitness, Study)`,
+        `Hey! 👋 Excited to coach you today! What is the #1 habit you want to build or improve right now?`,
       ];
       return res.status(200).json({
         success: true,
@@ -79,22 +79,39 @@ exports.chatWithCoach = async (req, res) => {
     ) {
       return res.status(200).json({
         success: true,
-        reply: `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **Answer Questions**: Ask me how to beat procrastination, improve sleep, or study effectively.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans for any goal.\n3. 📊 **Performance Analytics**: View AI Consistency Scores on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields by typing natural sentences on the Add Habit screen!`,
+        reply: `Here is what I can do for you as your AI Coach 🤖:\n\n1. 💬 **2-Way Coaching**: Have a real interactive conversation with me about your goals.\n2. ✨ **Generate Routines**: Tap **'AI Routine'** to create tailored habit plans.\n3. 📊 **Predict Risks**: Get consistency analysis on your Streaks screen.\n4. 🪄 **Magic Text Parser**: Auto-fill habit fields on Add Habit screen!\n\nWhich of these would you like to try first?`,
       });
     }
 
-    // 3. Try Live OpenRouter API (Llama 3.1 70B)
+    // 3. Construct Multi-turn Prompt with Full Conversation Memory
     const habits = await Habit.find({ user: req.user.id });
     const habitsSummary = habits.map(h => `${h.title} (${h.category}) - ${h.currentStreak}d streak`).join(', ');
 
-    const systemPrompt = `You are Nova, an elite, warm, encouraging AI Habit Coach powered by Llama 3.1 70B. 
-User's current habits: ${habitsSummary || 'No habits added yet'}.
-Provide short, actionable, inspiring advice with emojis. Keep responses friendly and under 120 words.`;
+    const systemPrompt = `You are Nova, an elite, highly interactive AI Habit Coach powered by Llama 3.1 70B.
+User's current habits in DB: ${habitsSummary || 'No habits added yet'}.
 
-    const messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message },
-    ];
+CRITICAL CONVERSATIONAL RULES:
+1. Speak in a warm, encouraging, conversational human tone.
+2. Directly reference and answer what the user just said or answered.
+3. ALWAYS end your response with ONE clear, engaging follow-up question to keep the conversation going (e.g., "What time of day suits you best?", "Have you tried starting with 10 mins?", "What is your biggest obstacle?").
+4. Keep responses concise and structured under 120 words with emojis.`;
+
+    // Reconstruct message thread
+    let messages = [{ role: 'system', content: systemPrompt }];
+
+    if (Array.isArray(history) && history.length > 0) {
+      history.forEach((h) => {
+        if (h.role && h.content) {
+          messages.push({
+            role: h.role === 'user' ? 'user' : 'assistant',
+            content: h.content,
+          });
+        }
+      });
+    }
+
+    // Append latest message
+    messages.push({ role: 'user', content: message });
 
     const aiResponse = await callOpenRouter(messages);
 
@@ -102,15 +119,15 @@ Provide short, actionable, inspiring advice with emojis. Keep responses friendly
       return res.status(200).json({ success: true, reply: aiResponse });
     }
 
-    // 4. Intelligent Smart Fallback Replies (NO generic "consistency with X" template)
-    let reply = `That's an inspiring focus! 🚀 Small daily consistency is the secret to big wins. Start with just 5-10 minutes today and celebrate your streak! 🔥`;
+    // Smart Conversational Fallbacks with Follow-up Questions
+    let reply = `That sounds like a great focus! 🚀 To make it stick, starting with a 5-minute daily commitment works wonders. What time of day would be easiest for you to do this habit? ⏰`;
 
     if (lowerMsg.includes('study') || lowerMsg.includes('read') || lowerMsg.includes('learn')) {
-      reply = `To excel at study & learning 📚:\n• Use the **Pomodoro Technique** (25 mins focus + 5 mins break)\n• Set a fixed daily study slot\n• Keep your phone in another room! 💡`;
+      reply = `Studying & reading regularly expands your mind! 📚 Have you tried using the **Pomodoro Technique** (25 mins study + 5 mins rest)? How many hours or pages are you aiming for daily?`;
     } else if (lowerMsg.includes('fit') || lowerMsg.includes('gym') || lowerMsg.includes('workout') || lowerMsg.includes('exercise')) {
-      reply = `Awesome fitness goal! 🏋️‍♂️ Consistency beats intensity. Start with a 15-min daily workout and track your flame streak! 🔥`;
+      reply = `Fitness is an incredible energy booster! 🏋️‍♂️ Do you prefer morning or evening workouts, and what's your favorite exercise right now?`;
     } else if (lowerMsg.includes('water') || lowerMsg.includes('health') || lowerMsg.includes('sleep')) {
-      reply = `Hydration & Sleep setup 💧😴:\n• Keep a 1L water bottle at your desk\n• Drink 1 glass immediately after waking up\n• Avoid screens 30 mins before sleep!`;
+      reply = `Focusing on health & sleep gives you ultimate vitality! 💧😴 What time do you usually go to bed, and how many glasses of water do you drink a day?`;
     }
 
     res.status(200).json({
@@ -122,7 +139,7 @@ Provide short, actionable, inspiring advice with emojis. Keep responses friendly
   }
 };
 
-// 2. @desc    Generate Personalised AI Routine
+// @desc    Generate Routine
 // @route   POST /api/ai/generate-routine
 exports.generateRoutine = async (req, res) => {
   try {
@@ -205,7 +222,7 @@ Generate 3-4 habits in raw JSON format only:
   }
 };
 
-// 3. @desc    AI Performance Analysis
+// @desc    AI Performance Analysis
 // @route   POST /api/ai/analyze-progress
 exports.analyzeProgress = async (req, res) => {
   try {
@@ -273,7 +290,7 @@ Return ONLY a valid JSON:
   }
 };
 
-// 4. @desc    AI Text Parser
+// @desc    AI Text Parser
 // @route   POST /api/ai/parse-text
 exports.parseTextToHabit = async (req, res) => {
   try {
@@ -333,7 +350,7 @@ exports.parseTextToHabit = async (req, res) => {
   }
 };
 
-// 5. @desc    AI Habit Optimizer
+// @desc    AI Habit Optimizer
 // @route   POST /api/ai/optimize-habit
 exports.optimizeHabit = async (req, res) => {
   try {
