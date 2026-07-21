@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import { Text, Surface, TextInput, Button, Portal, Modal } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAppTheme } from '../../lib/theme-context';
 import { useHabits } from '../../lib/habit-store';
+import { aiAPI } from '../../lib/api';
 
 interface ChatMessage {
   id: string;
@@ -38,7 +38,7 @@ export default function AICoachScreen() {
     {
       id: '1',
       sender: 'ai',
-      text: "Hello! I'm your AI Habit Coach powered by OpenRouter 🤖. What goal or habit would you like to build today?",
+      text: "Hello! I'm your AI Habit Coach powered by Meta Llama 3.1 70B 🤖. What goal or habit would you like to build today?",
       time: 'Just now',
     },
   ]);
@@ -49,7 +49,7 @@ export default function AICoachScreen() {
   const [generatingRoutine, setGeneratingRoutine] = useState<boolean>(false);
   const [generatedHabits, setGeneratedHabits] = useState<any[]>([]);
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if (!query.trim()) return;
 
@@ -64,36 +64,43 @@ export default function AICoachScreen() {
     setInputMessage('');
     setLoading(true);
 
-    // Call Backend API or simulated intelligent response
-    setTimeout(() => {
-      let responseText = `That's an inspiring goal! 🚀 To build consistency with "${query}", try starting with just 5-10 minutes a day. Small wins build momentum! 🔥`;
-
-      if (query.toLowerCase().includes('morning') || query.toLowerCase().includes('routine')) {
-        responseText = `Here is a high-performance Morning Routine: 
-1. Drink 500ml water immediately 💧
-2. 5 mins stretching & 10 mins meditation 🧘
-3. Read 10 pages before opening social media 📚`;
-      } else if (query.toLowerCase().includes('procrastinat')) {
-        responseText = `To beat procrastination, use the **2-Minute Rule**: Tell yourself you'll do the habit for just 2 minutes. Starting is 90% of the battle! 💡`;
-      }
+    try {
+      const res = await aiAPI.chat(query);
+      const aiReply = res.reply || 'Great goal! Focus on small steps today 🔥';
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: responseText,
+        text: aiReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+    } catch (err: any) {
+      console.log('AI Chat Fallback Response triggered:', err.message);
+      const fallbackMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: `That's an inspiring goal! 🚀 To build consistency with "${query}", try starting with just 5 minutes a day. Small wins build momentum! 🔥`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, fallbackMsg]);
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
-  const handleGenerateRoutine = () => {
+  const handleGenerateRoutine = async () => {
     if (!goalInput.trim()) return;
     setGeneratingRoutine(true);
 
-    setTimeout(() => {
+    try {
+      const res = await aiAPI.generateRoutine(goalInput.trim());
+      if (res.habits && res.habits.length > 0) {
+        setGeneratedHabits(res.habits);
+      }
+    } catch (err: any) {
+      console.log('AI Routine Generator Fallback:', err.message);
       setGeneratedHabits([
         {
           title: 'Power Hydration',
@@ -129,8 +136,9 @@ export default function AICoachScreen() {
           timeOfDay: 'evening',
         },
       ]);
+    } finally {
       setGeneratingRoutine(false);
-    }, 1500);
+    }
   };
 
   const handleImportAllHabits = () => {
@@ -139,15 +147,15 @@ export default function AICoachScreen() {
         title: h.title,
         description: h.description,
         category: h.category,
-        frequency: h.frequency,
-        targetCount: h.targetCount,
-        unit: h.unit,
-        color: h.color,
-        icon: h.icon,
+        frequency: h.frequency || 'daily',
+        targetCount: h.targetCount || 1,
+        unit: h.unit || 'times',
+        color: h.color || '#8C7CFF',
+        icon: h.icon || 'check',
         currentStreak: 0,
         bestStreak: 0,
         completedToday: false,
-        timeOfDay: h.timeOfDay,
+        timeOfDay: h.timeOfDay || 'anytime',
       });
     });
 
@@ -172,7 +180,7 @@ export default function AICoachScreen() {
               AI Habit Coach 🤖
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Powered by OpenRouter LLM Engine
+              Powered by Llama 3.1 70B Engine
             </Text>
           </View>
 
@@ -250,7 +258,7 @@ export default function AICoachScreen() {
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                AI Coach is thinking...
+                Llama 3.1 70B is thinking...
               </Text>
             </View>
           )}
@@ -292,7 +300,7 @@ export default function AICoachScreen() {
             ✨ AI Routine Generator
           </Text>
           <Text style={[styles.modalSub, { color: colors.textSecondary }]}>
-            Enter your main goal, and AI will construct a 3-habit routine for you!
+            Enter your main goal, and AI will construct a custom habit routine!
           </Text>
 
           <TextInput
@@ -322,7 +330,7 @@ export default function AICoachScreen() {
               <Text style={[styles.previewTitle, { color: colors.text }]}>Generated Habits:</Text>
               {generatedHabits.map((h, i) => (
                 <View key={i} style={[styles.habitPreviewRow, { backgroundColor: colors.surfaceVariant }]}>
-                  <MaterialCommunityIcons name={h.icon as any} size={20} color={h.color} />
+                  <MaterialCommunityIcons name={h.icon as any || 'star'} size={20} color={h.color || colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.habitPreviewName, { color: colors.text }]}>{h.title}</Text>
                     <Text style={[styles.habitPreviewSub, { color: colors.textSecondary }]}>
