@@ -108,8 +108,12 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
     setLoadingHabits(true);
     try {
       const res = await habitAPI.getHabits();
-      if (res.data) {
-        setHabits(res.data);
+      if (res.data && Array.isArray(res.data)) {
+        const formatted = res.data.map((h: any) => ({
+          ...h,
+          id: h.id || h._id || Date.now().toString(),
+        }));
+        setHabits(formatted);
       }
     } catch (e: any) {
       console.log('Backend not connected or offline, using local state:', e.message);
@@ -152,7 +156,6 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
       })
     );
 
-    // Call live API
     try {
       await habitAPI.toggleHabit(id);
     } catch (e: any) {
@@ -171,7 +174,6 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
 
     setHabits((prev) => [newHabit, ...prev]);
 
-    // Schedule notification for custom reminder time
     if (newHabitData.reminderTime) {
       const parts = newHabitData.reminderTime.split(':');
       if (parts.length === 2) {
@@ -183,12 +185,12 @@ export const HabitProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Call live API
     try {
       const res = await habitAPI.createHabit(newHabitData);
       if (res.data) {
+        const mongoId = res.data._id || res.data.id || tempId;
         setHabits((prev) =>
-          prev.map((h) => (h.id === tempId ? { ...res.data, id: res.data._id || res.data.id } : h))
+          prev.map((h) => (h.id === tempId ? { ...res.data, id: mongoId } : h))
         );
       }
     } catch (e: any) {

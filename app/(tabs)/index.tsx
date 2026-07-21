@@ -325,23 +325,25 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Surface>
       ) : (
-        filteredHabits.map((habit) => (
-          <Surface
-            key={habit.id}
-            style={[
-              styles.habitCard,
-              {
-                backgroundColor: colors.card,
-                borderColor: habit.completedToday ? colors.accent : colors.cardBorder,
-                borderLeftWidth: 5,
-                borderLeftColor: habit.color || colors.primary,
-              },
-            ]}
-          >
-            <View style={styles.cardMainRow}>
-              {/* Checkbox Button */}
-              <TouchableOpacity
-                onPress={() => toggleHabit(habit.id)}
+        filteredHabits.map((habit, index) => {
+          const habitId = habit.id || (habit as any)._id || `habit-key-${index}`;
+          return (
+            <Surface
+              key={habitId}
+              style={[
+                styles.habitCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: habit.completedToday ? colors.accent : colors.cardBorder,
+                  borderLeftWidth: 5,
+                  borderLeftColor: habit.color || colors.primary,
+                },
+              ]}
+            >
+              <View style={styles.cardMainRow}>
+                {/* Checkbox Button */}
+                <TouchableOpacity
+                  onPress={() => toggleHabit(habitId)}
                 activeOpacity={0.7}
                 style={[
                   styles.checkBtn,
@@ -412,14 +414,15 @@ export default function HomeScreen() {
 
               {/* Action Menu / Delete */}
               <TouchableOpacity
-                onPress={() => confirmDelete(habit.id, habit.title)}
+                onPress={() => confirmDelete(habitId, habit.title)}
                 style={styles.deleteBtn}
               >
                 <MaterialCommunityIcons name="trash-can-outline" size={20} color={colors.error} />
               </TouchableOpacity>
             </View>
           </Surface>
-        ))
+          );
+        })
       )}
     </ScrollView>
   );
